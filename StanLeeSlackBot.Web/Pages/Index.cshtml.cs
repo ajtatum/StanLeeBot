@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BabouExtensions.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using Serilog.Data;
 
 namespace StanLeeSlackBot.Web.Pages
 {
@@ -17,9 +19,9 @@ namespace StanLeeSlackBot.Web.Pages
             _logger = logger;
         }
 
-        public void OnGet()
+        public async Task<IActionResult> OnGet()
         {
-
+            return Page();
         }
     }
 }

@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - StanLeeSlackBot.Web</title>
+    <title>Stan Lee Slack Bot - @ViewData["Title"]</title>
+    <meta name="slack-app-id" content="ARQNHCE5Q">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
@@ -45,7 +46,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2019 - StanLeeSlackBot.Web - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            &copy; @DateTime.Now.Year - Stan Lee Slack Bot
         </div>
     </footer>
 
