@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using AspNet.Security.OAuth.Slack;
 using BabouExtensions;
@@ -34,6 +35,9 @@ namespace StanLeeSlackBot.Web
 
         public IConfiguration Configuration { get; }
 
+        public ClaimsIdentity userIdentity { get; set; }
+        public ClaimsPrincipal UserPrincipal { get; set; }
+
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -64,48 +68,45 @@ namespace StanLeeSlackBot.Web
                     options.SlidingExpiration = true;
                     options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
                 })
-            //.AddSlack(options =>
-            //{
-            //    options.ClientId = Configuration["Slack:ClientId"];
-            //    options.ClientSecret = Configuration["Slack:ClientSecret"];
-            //});
-            .AddOAuth("Slack", options =>
-            {
-                options.ClientId = Configuration["Slack:ClientId"];
-                options.ClientSecret = Configuration["Slack:ClientSecret"];
-                options.CallbackPath = new PathString("/signin-slack");
-                options.AuthorizationEndpoint = $"https://slack.com/oauth/authorize";
-                options.TokenEndpoint = "https://slack.com/api/oauth.access";
-                options.UserInformationEndpoint = "https://slack.com/api/users.identity?token=";
-                options.Scope.AddRange("identity.basic");
-                options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.Events = new OAuthEvents()
+                //.AddSlack(options =>
+                //{
+                //    options.ClientId = Configuration["Slack:ClientId"];
+                //    options.ClientSecret = Configuration["Slack:ClientSecret"];
+                //});
+                .AddOAuth("Slack", options =>
                 {
-
-                    OnCreatingTicket = async context =>
+                    options.ClientId = Configuration["Slack:ClientId"];
+                    options.ClientSecret = Configuration["Slack:ClientSecret"];
+                    options.CallbackPath = new PathString("/signin-slack");
+                    options.AuthorizationEndpoint = $"https://slack.com/oauth/authorize";
+                    options.TokenEndpoint = "https://slack.com/api/oauth.access";
+                    options.UserInformationEndpoint = "https://slack.com/api/users.identity?token=";
+                    options.Scope.Add("identity.basic");
+                    options.Events = new OAuthEvents()
                     {
-                        var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint + context.AccessToken);
-                        var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
-                        response.EnsureSuccessStatusCode();
-                        var userObject = JObject.Parse(await response.Content.ReadAsStringAsync());
-                        var user = userObject.SelectToken("user");
-                        var userId = user.Value<string>("id");
-
-                        //var userIdentity = new ClaimsIdentity("Slack");
-                        if (!string.IsNullOrEmpty(userId))
+                        OnCreatingTicket = async context =>
                         {
-                            context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
-                        }
+                            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint + context.AccessToken);
+                            var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+                            response.EnsureSuccessStatusCode();
+                            var userObject = JObject.Parse(await response.Content.ReadAsStringAsync());
+                            var user = userObject.SelectToken("user");
+                            var userId = user.Value<string>("id");
 
-                        var fullName = user.Value<string>("name");
-                        if (!string.IsNullOrEmpty(fullName))
-                        {
-                            context.Identity.AddClaim(new Claim(ClaimTypes.Name, fullName, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                            //userIdentity = new ClaimsIdentity("Slack");
+                            if (!string.IsNullOrEmpty(userId))
+                            {
+                                context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                            }
+
+                            var fullName = user.Value<string>("name");
+                            if (!string.IsNullOrEmpty(fullName))
+                            {
+                                context.Identity.AddClaim(new Claim(ClaimTypes.Name, fullName, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                            }
                         }
-                        context.Options.SaveTokens = true;
-                    }
-                };
-            });
+                    };
+                });
 
             services.AddMvc();
             services.AddRazorPages();
