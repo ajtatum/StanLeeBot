@@ -52,41 +52,25 @@ namespace StanLeeSlackBot.Web
                 .ProtectKeysWithAzureKeyVault(Configuration["Azure:KeyVault:EncryptionKey"], Configuration["Azure:KeyVault:ClientId"], Configuration["Azure:KeyVault:ClientSecret"]);
 
             services.AddAuthentication(options =>
-                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme)
+                {
+                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                })
                 .AddCookie(options =>
                 {
-                    options.Cookie.Name = "StanLeeSlackBotAuthCookie";
-                    //options.Cookie.Domain = "babou.io";
-                    options.Cookie.HttpOnly = true;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                    options.Cookie.MaxAge = TimeSpan.FromDays(7);
-                    options.ExpireTimeSpan = TimeSpan.FromDays(7);
-
-                    options.LoginPath = $"/login";
-                    options.LogoutPath = $"/logout";
-                    options.AccessDeniedPath = $"/AccessDenied";
-                    options.SlidingExpiration = true;
-                    options.ReturnUrlParameter = CookieAuthenticationDefaults.ReturnUrlParameter;
+                    options.LoginPath = "/login";
+                    options.LogoutPath = "/logout";
                 })
-                //.AddSlack(options =>
-                //{
-                //    options.ClientId = Configuration["Slack:ClientId"];
-                //    options.ClientSecret = Configuration["Slack:ClientSecret"];
-                //});
-                .AddOAuth("Slack", options =>
+                 .AddSlack(options =>
                 {
                     options.ClientId = Configuration["Slack:ClientId"];
                     options.ClientSecret = Configuration["Slack:ClientSecret"];
-                    options.CallbackPath = new PathString("/signin-slack");
-                    options.AuthorizationEndpoint = $"https://slack.com/oauth/authorize";
-                    options.TokenEndpoint = "https://slack.com/api/oauth.access";
-                    options.UserInformationEndpoint = "https://slack.com/api/users.identity?token=";
-                    options.Scope.Add("identity.basic");
+                    options.CallbackPath =  $"{SlackAuthenticationDefaults.CallbackPath}?state={Guid.NewGuid():N}";
+                    options.ReturnUrlParameter = new PathString("/");
                     options.Events = new OAuthEvents()
                     {
                         OnCreatingTicket = async context =>
                         {
-                            var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint + context.AccessToken);
+                            var request = new HttpRequestMessage(HttpMethod.Get, $"{context.Options.UserInformationEndpoint}?token={context.AccessToken}");
                             var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
                             response.EnsureSuccessStatusCode();
                             var userObject = JObject.Parse(await response.Content.ReadAsStringAsync());
@@ -137,23 +121,6 @@ namespace StanLeeSlackBot.Web
 
             app.UseAuthentication();
             app.UseAuthorization();
-
-            //app.Map("/login", builder =>
-            //{
-            //    builder.Run(async context =>
-            //    {
-            //        await context.ChallengeAsync("Slack", properties: new AuthenticationProperties{RedirectUri = "/"});
-            //    });
-            //});
-
-            //app.Map("/logout", builder =>
-            //{
-            //    builder.Run(async context =>
-            //    {
-            //        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            //        context.Response.Redirect("/");
-            //    });
-            //});
 
             app.UseEndpoints(endpoints =>
             {

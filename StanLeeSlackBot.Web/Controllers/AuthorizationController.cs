@@ -19,6 +19,12 @@ namespace StanLeeSlackBot.Web.Controllers
             return Challenge(new AuthenticationProperties { RedirectUri = "/" }, "Slack");
         }
 
+        [HttpGet("~/signin-slack")]
+        public IActionResult SignInSlack()
+        {
+            return RedirectToPage("/Index");
+        }
+
         [HttpGet("~/logout"), HttpPost("~/logout")]
         public IActionResult SignOut()
         {
