@@ -137,22 +137,22 @@ namespace StanLeeSlackBot.Web
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.Map("/login", builder =>
-            {
-                builder.Run(async context =>
-                {
-                    await context.ChallengeAsync("Slack", properties: new AuthenticationProperties{RedirectUri = "/"});
-                });
-            });
+            //app.Map("/login", builder =>
+            //{
+            //    builder.Run(async context =>
+            //    {
+            //        await context.ChallengeAsync("Slack", properties: new AuthenticationProperties{RedirectUri = "/"});
+            //    });
+            //});
 
-            app.Map("/logout", builder =>
-            {
-                builder.Run(async context =>
-                {
-                    await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                    context.Response.Redirect("/");
-                });
-            });
+            //app.Map("/logout", builder =>
+            //{
+            //    builder.Run(async context =>
+            //    {
+            //        await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            //        context.Response.Redirect("/");
+            //    });
+            //});
 
             app.UseEndpoints(endpoints =>
             {
