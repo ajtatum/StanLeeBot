@@ -1,11 +1,14 @@
 ﻿using System;
+using System.Configuration;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using BabouExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Serilog;
 using SlackBotMessages;
 using SlackBotMessages.Enums;
 using SlackBotMessages.Models;
@@ -21,29 +24,60 @@ namespace StanLeeSlackBot.Web.Services
     {
         private readonly ILogger<SlackService> _logger;
         private readonly AppSettings _appSettings;
-        
+
         public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings)
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
         }
 
-        public void SendBotMessage()
+        public async Task SendBotMessage()
         {
             var slackApiToken = _appSettings.Slack.ApiToken;
 
-            var bot = SlackBot.InitializeAsync(slackApiToken).Result;
+            var bot = await SlackBot.InitializeAsync(slackApiToken, cfg =>
+            {
+                cfg.LoggerFactory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.ForContext<SlackService>());
+                cfg.OnSendMessageFailure = async (queue, msg, logger, e) =>
+                {
+                    if (msg.SendAttempts <= 5)
+                    {
+                        logger?.LogWarning("Failed to send message {MessageText}. Tried {SendAttempts} times", msg.Text, msg.SendAttempts);
+                        await Task.Delay(1000 * msg.SendAttempts);
+                        queue.Enqueue(msg);
+                        return;
+                    }
 
-            bot.When(Matches.Text("hello"), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
+                    logger?.LogError("Gave up trying to send message {MessageText}", msg.Text);
+                };
+            });
+
+            bot.When(Matches.Text("hello").Or(Matches.Text("hi").Or(Matches.Text("hola"))), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
             {
                 _logger.LogInformation("StaLeeBot matched hello. {@Conversation}", conv);
                 await conv.PostMessage($"Hi {conv.From.Username}!");
+                conv.End();
             });
 
             bot.When(Matches.Text("test"), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
             {
                 _logger.LogInformation("StaLeeBot matched test. {@Conversation}", conv);
                 await conv.PostMessage($"I'm working {conv.From.Username}!");
+                conv.End();
+            });
+
+            bot.When(Matches.Text("help"), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
+            {
+                _logger.LogInformation("StaLeeBot matched help. {@Conversation}", conv);
+                await conv.PostMessage(BuildHelpText(conv.From.Username));
+                conv.End();
+            });
+
+            bot.When(Matches.Text("support"), HubType.All, async conv =>
+            {
+                _logger.LogInformation("StanLeeBot matched support. {@Conversation}", conv);
+                await conv.PostMessage("Sure, if you want to reach out go to https://stanleeslackbot.com/Support");
+                conv.End();
             });
         }
 
@@ -126,7 +160,40 @@ namespace StanLeeSlackBot.Web.Services
                 _logger.LogError("GetDCComics: GetGoogleSearchSlackResponseJson is null. {@SlackCommandRequest}", slackCommandRequest);
             }
         }
+
+        public async Task GetStanLee(SlackCommandRequest slackCommandRequest)
+        {
+            var client = new SbmClient(slackCommandRequest.ResponseUrl);
+            var message = new Message
+            {
+                Text = slackCommandRequest.Text switch
+                {
+                    "help" => BuildHelpText(slackCommandRequest.UserName),
+                    "support" => "Sure, if you want to reach out go to https://stanleeslackbot.com/Support",
+                    _ => "Unfortunately, I only know how to respond to help and support right now."
+                }
+            };
+            
+            var response = await client.SendAsync(message);
+
+            if (response == "ok")
+                _logger.LogInformation("GetStanLee: Responded to {MessageText} and sent message {@Message}", slackCommandRequest.Text, message);
+            else
+                _logger.LogError("GetStanLee: Tried responding to {MessageText} but received an error sending {@Message}", slackCommandRequest.Text, message);
+        }
         #endregion
+
+        private string BuildHelpText(string username)
+        {
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine($"Never fear {username} I can help!");
+            stringBuilder.AppendLine("To learn more about anything Marvel or DC Comics related, use the slash commands /marvel and /dc.");
+            stringBuilder.AppendLine("For example, if you want to lookup Ironman you'd type /marvel Ironman");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("If you're looking for support, go to https://stanleeslackbot.com/Support");
+
+            return stringBuilder.ToString();
+        }
 
         private async Task<GoogleSearchResponse> GetGoogleSearchSlackResponseJson(string search, string cse)
         {

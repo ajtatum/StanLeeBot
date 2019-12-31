@@ -29,10 +29,6 @@ namespace StanLeeSlackBot.Web
 
         public IConfiguration Configuration { get; }
 
-        public ClaimsIdentity userIdentity { get; set; }
-        public ClaimsPrincipal UserPrincipal { get; set; }
-
-        // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             var azureStorageAccountConnection = Configuration["Azure:Storage:ConnectionString"];
@@ -99,7 +95,6 @@ namespace StanLeeSlackBot.Web
             services.AddHostedService<SlackBackgroundService>();
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())

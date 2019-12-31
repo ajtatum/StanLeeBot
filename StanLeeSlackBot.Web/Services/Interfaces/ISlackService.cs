@@ -5,8 +5,9 @@ namespace StanLeeSlackBot.Web.Services.Interfaces
 {
     public interface ISlackService
     {
-        void SendBotMessage();
+        Task SendBotMessage();
         Task GetMarvel(SlackCommandRequest slackCommandRequest);
         Task GetDcComics(SlackCommandRequest slackCommandRequest);
+        Task GetStanLee(SlackCommandRequest slackCommandRequest);
     }
 }

@@ -68,6 +68,9 @@ namespace StanLeeSlackBot.Web.Areas.API
                 case "/dc":
                     await _slackService.GetDcComics(slackCommandRequest);
                     return new OkResult();
+                case "/stanlee":
+                    await _slackService.GetStanLee(slackCommandRequest);
+                    return new OkResult();
                 default:
                     return new BadRequestResult();
             }
