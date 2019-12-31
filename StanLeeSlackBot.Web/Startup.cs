@@ -1,19 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Security.Claims;
-using System.Security.Principal;
-using System.Threading.Tasks;
 using AspNet.Security.OAuth.Slack;
-using BabouExtensions;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -51,49 +45,52 @@ namespace StanLeeSlackBot.Web
                 .PersistKeysToAzureBlobStorage(container, $"{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/dataprotectionkeys.xml")
                 .ProtectKeysWithAzureKeyVault(Configuration["Azure:KeyVault:EncryptionKey"], Configuration["Azure:KeyVault:ClientId"], Configuration["Azure:KeyVault:ClientSecret"]);
 
+            var slackState = Guid.NewGuid().ToString("N");
+
             services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                })
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/login";
-                    options.LogoutPath = "/logout";
-                })
-                 .AddSlack(options =>
-                {
-                    options.ClientId = Configuration["Slack:ClientId"];
-                    options.ClientSecret = Configuration["Slack:ClientSecret"];
-                    options.CallbackPath =  $"{SlackAuthenticationDefaults.CallbackPath}?state={Guid.NewGuid():N}";
-                    options.ReturnUrlParameter = new PathString("/");
-                    options.Events = new OAuthEvents()
                     {
-                        OnCreatingTicket = async context =>
+                        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    })
+                    .AddCookie(options =>
+                    {
+                        options.LoginPath = "/login";
+                        options.LogoutPath = "/logout";
+                    })
+                     .AddSlack(options =>
+                    {
+                        options.ClientId = Configuration["Slack:ClientId"];
+                        options.ClientSecret = Configuration["Slack:ClientSecret"];
+                        options.CallbackPath = $"{SlackAuthenticationDefaults.CallbackPath}?state={slackState}";
+                        options.ReturnUrlParameter = new PathString("/");
+                        options.Events = new OAuthEvents()
                         {
-                            var request = new HttpRequestMessage(HttpMethod.Get, $"{context.Options.UserInformationEndpoint}?token={context.AccessToken}");
-                            var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
-                            response.EnsureSuccessStatusCode();
-                            var userObject = JObject.Parse(await response.Content.ReadAsStringAsync());
-                            var user = userObject.SelectToken("user");
-                            var userId = user.Value<string>("id");
+                            OnCreatingTicket = async context =>
+                            {
+                                var request = new HttpRequestMessage(HttpMethod.Get, $"{context.Options.UserInformationEndpoint}?token={context.AccessToken}");
+                                var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
+                                response.EnsureSuccessStatusCode();
+                                var userObject = JObject.Parse(await response.Content.ReadAsStringAsync());
+                                var user = userObject.SelectToken("user");
+                                var userId = user.Value<string>("id");
 
-                            //userIdentity = new ClaimsIdentity("Slack");
+
                             if (!string.IsNullOrEmpty(userId))
-                            {
-                                context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
-                            }
+                                {
+                                    context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                                }
 
-                            var fullName = user.Value<string>("name");
-                            if (!string.IsNullOrEmpty(fullName))
-                            {
-                                context.Identity.AddClaim(new Claim(ClaimTypes.Name, fullName, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                                var fullName = user.Value<string>("name");
+                                if (!string.IsNullOrEmpty(fullName))
+                                {
+                                    context.Identity.AddClaim(new Claim(ClaimTypes.Name, fullName, ClaimValueTypes.String, context.Options.ClaimsIssuer));
+                                }
                             }
-                        }
-                    };
-                });
+                        };
+                    });
 
             services.AddMvc();
-            services.AddRazorPages();
+            services.AddRazorPages()
+                .AddRazorRuntimeCompilation();
 
             services.Configure<AppSettings>(Configuration);
 
@@ -107,6 +104,7 @@ namespace StanLeeSlackBot.Web
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+                app.UseBrowserLink();
             }
             else
             {

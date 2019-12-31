@@ -1,36 +1,79 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using SlackBotMessages;
+using SlackBotMessages.Models;
+using StanLeeSlackBot.Web.Models;
 
 namespace StanLeeSlackBot.Web.Controllers
 {
     public class AuthenticationController : Controller
     {
-        [HttpGet("~/login")]
-        public async Task<IActionResult> SignIn()
+        private readonly ILogger<AuthenticationController> _logger;
+        private readonly AppSettings _appSettings;
+
+        public AuthenticationController(ILogger<AuthenticationController> logger, IOptionsMonitor<AppSettings> appSettings)
         {
-            // Instruct the middleware corresponding to the requested external identity
-            // provider to redirect the user agent to its own authorization endpoint.
-            // Note: the authenticationScheme parameter must match the value configured in Startup.cs
+            _logger = logger;
+            _appSettings = appSettings.CurrentValue;
+        }
+
+        [HttpGet("~/login")]
+        public IActionResult SignIn()
+        {
             return Challenge(new AuthenticationProperties { RedirectUri = "/" }, "Slack");
         }
 
         [HttpGet("~/signin-slack")]
-        public IActionResult SignInSlack()
+        public async Task<IActionResult> SignInSlack()
         {
-            return RedirectToPage("/Index");
+            var clientId = _appSettings.Slack.ClientId;
+            var clientSecret = _appSettings.Slack.ClientSecret;
+            var code = Request.Query["code"];
+
+            SlackAuthRequest slackAuthRequest;
+            string responseMessage;
+
+            var requestUrl = $"https://slack.com/api/oauth.access?client_id={clientId}&client_secret={clientSecret}&code={code}";
+            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+            using (var client = new HttpClient())
+            {
+                var response = await client.SendAsync(request).ConfigureAwait(false);
+                var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+                slackAuthRequest = JsonConvert.DeserializeObject<SlackAuthRequest>(result);
+            }
+
+            if (slackAuthRequest != null)
+            {
+                _logger.LogInformation("New installation of StanLeeBot for {TeamName} in {Channel}", slackAuthRequest.TeamName, slackAuthRequest.IncomingWebhook.Channel);
+
+                var webhookUrl = slackAuthRequest.IncomingWebhook.Url;
+
+                var sbmClient = new SbmClient(webhookUrl);
+                var message = new Message
+                {
+                    Text = "Hi there from StanLeeBot!"
+                };
+                await sbmClient.SendAsync(message).ConfigureAwait(false);
+
+                responseMessage = $"Congrats! StanLeeBot has been successfully added to {slackAuthRequest.TeamName} {slackAuthRequest.IncomingWebhook.Channel}";
+                return RedirectToPage("/Index", new { message = responseMessage });
+            }
+
+            _logger.LogError("Something went wrong making a request to {RequestUrl}", requestUrl);
+
+            responseMessage = "Error: Something went wrong and we were unable to add StanLeeBot to your Slack.";
+            return RedirectToPage("/Index", new { message = responseMessage });
         }
 
         [HttpGet("~/logout"), HttpPost("~/logout")]
         public IActionResult SignOut()
         {
-            // Instruct the cookies middleware to delete the local cookie created
-            // when the user agent is redirected from the external identity provider
-            // after a successful authentication flow (e.g Google or Facebook).
             return SignOut(new AuthenticationProperties { RedirectUri = "/" },
                 CookieAuthenticationDefaults.AuthenticationScheme);
         }
