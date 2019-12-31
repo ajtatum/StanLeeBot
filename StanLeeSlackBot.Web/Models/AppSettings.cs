@@ -5,6 +5,7 @@
         public ApplicationInsightsSettings ApplicationInsights { get; set; }
         public AzureSettings Azure { get; set; }
         public string BuildNumber { get; set; }
+        public EmailSenderSettings EmailSender { get; set; }
         public GoogleCustomSearchSettings GoogleCustomSearch { get; set; }
         public string IpStackApiKey { get; set; }
         public SlackSettings Slack { get; set; }
@@ -33,6 +34,16 @@
             public string ConnectionString { get; set; }
             public string DataProtectionContainer { get; set; }
         }
+    }
+
+    public class EmailSenderSettings
+    {
+        public string ApiKey { get; set; }
+        public string Domain { get; set; }
+        public string FromName { get; set; }
+        public string FromEmail { get; set; }
+        public string ToEmail { get; set; }
+        public string ToName { get; set; }
     }
 
     public class GoogleCustomSearchSettings

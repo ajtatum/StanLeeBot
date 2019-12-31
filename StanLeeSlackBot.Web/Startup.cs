@@ -74,7 +74,7 @@ namespace StanLeeSlackBot.Web
                                 var userId = user.Value<string>("id");
 
 
-                            if (!string.IsNullOrEmpty(userId))
+                                if (!string.IsNullOrEmpty(userId))
                                 {
                                     context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
                                 }
@@ -94,6 +94,7 @@ namespace StanLeeSlackBot.Web
 
             services.Configure<AppSettings>(Configuration);
 
+            services.AddTransient<IEmailService, EmailService>();
             services.AddSingleton<ISlackService, SlackService>();
             services.AddHostedService<SlackBackgroundService>();
         }
