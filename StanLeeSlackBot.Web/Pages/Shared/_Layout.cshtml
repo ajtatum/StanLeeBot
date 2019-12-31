@@ -3,32 +3,44 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - StanLeeSlackBot.Web</title>
+    <title>StanLeeSlackBot - @ViewData["Title"]</title>
+    <meta name="slack-app-id" content="ARQNHCE5Q">
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark box-shadow">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">StanLeeSlackBot.Web</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <a class="navbar-brand" asp-area="" asp-page="/Index">StanLeeSlackBot</a>
+                @*<button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
+                                <a class="nav-link text-white" asp-area="" asp-page="/Index">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                                    </li>
+                        @if (User.Identity.IsAuthenticated)
+                            {
+                                <li><a  class="nav-link text-dark" href="~/logout">Logout</a></li>
+                            }
+                            else
+                            {
+                                <li><a  class="nav-link text-dark" href="~/login">Login</a></li>
+                            }
                     </ul>
-                </div>
+                </div>*@
             </div>
         </nav>
     </header>
+    <div class="container-fluid text-center mb-4" style="background-color: #FF3843;">
+        <img src="~/images/StanLee-250x250.png" class="img-fluid" style="padding:25px 0" alt="Stan Lee Slack Bot" title="Stan Lee Slack Bot" />
+    </div>
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
@@ -37,7 +49,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2019 - StanLeeSlackBot.Web - <a asp-area="" asp-page="/Privacy">Privacy</a>
+            &copy; @DateTime.Now.Year - StanLeeSlackBot
         </div>
     </footer>
 

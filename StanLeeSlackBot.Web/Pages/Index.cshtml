@@ -4,7 +4,37 @@
     ViewData["Title"] = "Home page";
 }
 
+@{
+    var message = Request.Query["message"].ToString();
+    var success = !message.StartsWith("Error");
+}
+
+@if (!string.IsNullOrWhiteSpace(message))
+{
+    <div class="alert @(success ? "alert-success" : "alert-danger") alert-dismissible" role="alert">
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="alert-heading">@(success ? "Success" : "Error")</h4>
+        <div>
+            @message
+        </div>
+    </div>
+}
+
+
+
 <div class="text-center">
     <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <div class="text-left">
+        <p>
+            The StanLeeSlackBot scours the Marvel and DC Comics website to find information that you're looking for. You can use the following commands:
+            <ul>
+                <li>/marvel</li>
+                <li>/dc</li>
+            </ul>
+            For example, if you want information about Ironman you'd type /marvel Ironman. However, you can look up so much more!
+        </p>
+    </div>
+    <p>
+        <a href="https://slack.com/oauth/authorize?scope=incoming-webhook,commands,bot&client_id=248918156054.874765422194"><img alt="Add to Slack" width="200" src="https://platform.slack-edge.com/img/add_to_slack@2x.png" /></a>
+    </p>
 </div>
