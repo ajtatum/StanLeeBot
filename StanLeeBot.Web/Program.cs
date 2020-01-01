@@ -55,7 +55,7 @@ namespace StanLeeBot.Web
                 })
                 .UseSerilog((hostingContext, loggerConfiguration) =>
                 {
-                    loggerConfiguration.LoadDefaultConfig(hostingContext, "StanLeeSlackBot", true, true, true, true);
+                    loggerConfiguration.LoadDefaultConfig(hostingContext, "StanLeeBot", true, true, true, true);
                 });
         }
     }

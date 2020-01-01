@@ -37,7 +37,7 @@ namespace StanLeeBot.Web
             var container = cloudBlobClient.GetContainerReference(Configuration["Azure:Storage:DataProtectionContainer"]);
 
             services.AddDataProtection()
-                .SetApplicationName("StanLeeSlackBot")
+                .SetApplicationName("StanLeeBot")
                 .PersistKeysToAzureBlobStorage(container, $"{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/dataprotectionkeys.xml")
                 .ProtectKeysWithAzureKeyVault(Configuration["Azure:KeyVault:EncryptionKey"], Configuration["Azure:KeyVault:ClientId"], Configuration["Azure:KeyVault:ClientSecret"]);
 
