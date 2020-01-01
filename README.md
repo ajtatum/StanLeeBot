@@ -2,9 +2,11 @@
 
 # **StanLeeBot**
 
-The StanLeeBot scours the Marvel and DC Comics website to find information that you're looking for.
+The StanLeeBot is a Slack app that scours the Marvel and DC Comics website to find information that you're looking for.
 
 You can interact with the StanLeeBot through slash commands like /dc and /marvel.
+
+[![Add to Slack](https://platform.slack-edge.com/img/add_to_slack.png)](https://slack.com/oauth/authorize?client_id=248918156054.874765422194&scope=bot,commands,incoming-webhook)
 
 ---
 
