@@ -1,6 +1,6 @@
 {
-    "name": "Stan Lee Slack Bot",
-    "short_name": "Stan Lee Slack Bot",
+    "name": "Stan Lee Bot",
+    "short_name": "Stan Lee Bot",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -15,6 +15,6 @@
     ],
     "theme_color": "#ff3843",
     "background_color": "#ff3843",
-    "start_url": "https://stanleeslackbot.com/",
+    "start_url": "https://stanleebot.com/",
     "display": "standalone"
 }
