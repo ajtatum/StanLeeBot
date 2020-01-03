@@ -51,31 +51,31 @@ namespace StanLeeBot.Web.Services
                 };
             });
 
-            bot.When(Matches.Text("hello").Or(Matches.Text("hi").Or(Matches.Text("hola"))), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
+            bot.When(Matches.Text("hello").Or(Matches.Text("hi").Or(Matches.Text("hola"))), HubType.All, async conv =>
             {
                 _logger.LogInformation("StaLeeBot matched hello. {@Conversation}", conv);
-                await conv.PostMessage($"Hi {conv.From.Username}!");
+                await conv.PostMessage($"Hi {conv.From.Username}!").ConfigureAwait(false);
                 conv.End();
             });
 
-            bot.When(Matches.Text("test"), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
+            bot.When(Matches.Text("test"), HubType.All, async conv =>
             {
                 _logger.LogInformation("StaLeeBot matched test. {@Conversation}", conv);
-                await conv.PostMessage($"I'm working {conv.From.Username}!");
+                await conv.PostMessage($"I'm working {conv.From.Username}!").ConfigureAwait(false);
                 conv.End();
             });
 
-            bot.When(Matches.Text("help"), HubType.DirectMessage | HubType.Channel | HubType.Group, async conv =>
+            bot.When(Matches.Text("help"), HubType.All, async conv =>
             {
                 _logger.LogInformation("StaLeeBot matched help. {@Conversation}", conv);
-                await conv.PostMessage(BuildHelpText(conv.From.Username));
+                await conv.PostMessage(BuildHelpText(conv.From.Username)).ConfigureAwait(false);
                 conv.End();
             });
 
             bot.When(Matches.Text("support"), HubType.All, async conv =>
             {
                 _logger.LogInformation("StanLeeBot matched support. {@Conversation}", conv);
-                await conv.PostMessage("Sure, if you want to reach out go to https://stanleebot.com/Support");
+                await conv.PostMessage("Sure, if you want to reach out go to https://stanleebot.com/Support").ConfigureAwait(false);
                 conv.End();
             });
         }
@@ -107,8 +107,9 @@ namespace StanLeeBot.Web.Services
                     .SetImage(gsr.Items[0].PageMap.CseImage[0].Src)
                     .SetColor(Color.Green);
 
+                message.SetResponseType(ResponseType.InChannel);
                 message.AddAttachment(attachment);
-                var response = await client.SendAsync(message);
+                var response = await client.SendAsync(message).ConfigureAwait(false);
 
                 if (response == "ok")
                     _logger.LogInformation("GetMarvel: Sent message {@Message}", message);
@@ -146,8 +147,9 @@ namespace StanLeeBot.Web.Services
                     .SetThumbUrl(gsr.Items[0].PageMap.CseThumbnail.ElementAtOrDefault(0)?.Src)
                     .SetColor(Color.Green);
 
+                message.SetResponseType(ResponseType.InChannel);
                 message.AddAttachment(attachment);
-                var response = await client.SendAsync(message);
+                var response = await client.SendAsync(message).ConfigureAwait(false);
 
                 if (response == "ok")
                     _logger.LogInformation("GetDCComics: Sent message {@Message}", message);
@@ -172,8 +174,9 @@ namespace StanLeeBot.Web.Services
                     _ => "Unfortunately, I only know how to respond to help and support right now."
                 }
             };
-            
-            var response = await client.SendAsync(message);
+
+            message.SetResponseType(ResponseType.Ephemeral);
+            var response = await client.SendAsync(message).ConfigureAwait(false);
 
             if (response == "ok")
                 _logger.LogInformation("GetStanLee: Responded to {MessageText} and sent message {@Message}", slackCommandRequest.Text, message);
