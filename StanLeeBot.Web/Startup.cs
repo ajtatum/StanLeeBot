@@ -90,6 +90,9 @@ namespace StanLeeBot.Web
 
             services.Configure<AppSettings>(Configuration);
 
+            services.AddScoped<ITelegramMessagingService, TelegramMessagingService>();
+            services.AddSingleton<ITelegramBotService, TelegramBotService>();
+
             services.AddTransient<IEmailService, EmailService>();
             services.AddSingleton<ISlackService, SlackService>();
             services.AddHostedService<SlackBackgroundService>();

@@ -9,6 +9,7 @@
         public GoogleCustomSearchSettings GoogleCustomSearch { get; set; }
         public string IpStackApiKey { get; set; }
         public SlackSettings Slack { get; set; }
+        public TelegramSettings Telegram { get; set; }
     }
 
     public class ApplicationInsightsSettings
@@ -60,5 +61,10 @@
         public string ClientSecret { get; set; }
         public string SigningSecret { get; set; }
         public string VerificationToken { get; set; }
+    }
+
+    public class TelegramSettings
+    {
+        public string ApiToken { get; set; }
     }
 }

@@ -1,13 +1,25 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>StanLeeBot - @ViewData["Title"]</title>
-    <partial name="_Favicons"/>
+    <partial name="_Favicons" />
     <meta name="slack-app-id" content="ARQNHCE5Q">
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/lib/font-awesome/css/all.css" />
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
+    @RenderSection("CSS", required: false)
 </head>
 <body>
     <header>
@@ -42,8 +54,8 @@
             </div>
         </nav>
     </header>
-    <div class="container-fluid text-center mb-4" style="background-color: #FF3843;">
-        <img src="~/images/StanLee-250x250.png" class="img-fluid" style="padding:25px 0" alt="StanLeeBot" title="StanLeeBot" />
+    <div class="container-fluid text-center mb-4 bg-stanlee">
+        <img src="~/images/StanLee-250x250.png" class="img-fluid pad-25-0" alt="StanLeeBot" title="StanLeeBot" />
     </div>
     <div class="container">
         <main role="main" class="pb-3">
@@ -51,15 +63,24 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="border-top footer text-muted line-height-30">
         <div class="container">
-            &copy; @DateTime.Now.Year - StanLeeBot
+            &copy; @DateTime.Now.Year - StanLeeBot - Build: @Configuration["BuildNumber"]
+        </div>
+        <div class="container">
+            Developed by <a class="text-lightblue" href="http://s.babou.io/aj?src=https://stanleebot.com" target="_blank">AJ Tatum</a>
         </div>
     </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+<environment include="Development">
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script src="~/lib/font-awesome/js/all.min.js"></script>
+    <script src="~/js/site.js"></script>
+</environment>
+<environment exclude="Development">
+    <script src="~/js/stanlee.min.js"></script>
+</environment>
 
     @RenderSection("Scripts", required: false)
 </body>
