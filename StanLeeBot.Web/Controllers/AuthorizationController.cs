@@ -57,7 +57,7 @@ namespace StanLeeBot.Web.Controllers
                 var sbmClient = new SbmClient(webhookUrl);
                 var message = new Message
                 {
-                    Text = "Hi there from StanLeeBot!"
+                    Text = "Hi there from StanLeeBot! Checkout what I can do by typing /stanlee help"
                 };
                 await sbmClient.SendAsync(message).ConfigureAwait(false);
 
