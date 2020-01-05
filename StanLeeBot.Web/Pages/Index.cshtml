@@ -38,16 +38,35 @@
         <div class="container-fluid">
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="slack">
-                    <p>
-                        The @@StanLeeBot scours the Marvel and DC Comics website to find information that you're looking for. You can use the following commands in Slack:
-                        <ul>
-                            <li>/marvel</li>
-                            <li>/dc</li>
-                            <li>/stanlee</li>
-                        </ul>
-                        For example, if you want information about Ironman you'd type /marvel Ironman. However, you can look up so much more!
-                    </p>
-                    <p class="text-center">
+
+                    The <b>@@StanLeeBot</b> scours the Marvel and DC Comics website to find information that you're looking for and can do some other helpful functions.
+                    <div class="pad-top-10">
+                        To learn more about anything Marvel or DC Comics related, use the slash commands <b>/marvel</b> and <b>/dc</b>.
+                    </div>
+                    <div class="pad-top-10">
+                        Here are some examples:
+                    </div>
+                    <ul class="no-margin-bottom">
+                        <li>/marvel Ironman</li>
+                        <li>/marvel Infinity Stones</li>
+                        <li>/dc Batman</li>
+                        <li>/dc Justice League Movie</li>
+                    </ul>
+                    <div class="pad-top-10">
+                        For help or support, you can go about it two ways. Either send a direct message to <b>@@StanLeeBot</b> with "help" or "support"
+                        or use the slash command <b>/stanlee</b> with "help" or "support".
+                    </div>
+                    <div class="pad-top-10">
+                        The <b>@@StanLeeBot</b> can also shorten long urls into a https://mrvl.co/ url. You can use the command <b>/mrvlco</b>. 
+                        The format for the <b>/mrvlco</b> commands is as follows <b>/mrvlco</b> <i>LongUrl</i> <i>YourEmailAddress</i>.
+                    </div>
+                    <div class="pad-top-10">
+                        <b>@@StanLeeBot</b> asks for your email so that if you want to keep track of your short urls or view stats,
+                        you can log into the URL Shortening Service provided by <a href="https://babou.io" target="_blank">https://babou.io</a>. 
+                        Don't worry, we won't email you or sell your email address to any third party. Your email address is to <b><i>strictly</i></b> 
+                        create or update an account with babou.io (which is also developed by the same team here).
+                    </div>
+                    <p class="text-center pad-top-10">
                         <a href="https://slack.com/oauth/authorize?scope=incoming-webhook,commands,bot&client_id=@Configuration["Slack:ClientId"]"><img alt="Add to Slack" width="200" src="https://platform.slack-edge.com/img/add_to_slack@2x.png" /></a>
                     </p>
                 </div>

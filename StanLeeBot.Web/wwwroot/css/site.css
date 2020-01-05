@@ -92,3 +92,9 @@ body {
 .btn-telegram:hover {
     color: #fff;
 }
+.no-margin-bottom {
+    margin-bottom: 0 !important;
+}
+.pad-top-10 {
+    padding-top: 10px;
+}
