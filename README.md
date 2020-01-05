@@ -2,13 +2,43 @@
 
 # **StanLeeBot**
 
-The StanLeeBot is a bot that scours the Marvel and DC Comics website to find information that you're looking for. The bot is currently integrated with Slack (@StanLeeBot) and Telegram (@TheStanLeeBot).
+### Slack
 
-You can interact with the StanLeeBot through slash commands like /dc and /marvel.
+The **@StanLeeBot** scours the Marvel and DC Comics website to find information that you're looking for and can do some other helpful functions.
+
+To learn more about anything Marvel or DC Comics related, use the slash commands **/marvel** and **/dc**.
+
+Here are some examples:
+
+* /marvel Ironman
+* /marvel Infinity Stones
+* /dc Batman
+* /dc Justice League Movie
+
+For help or support, use the slash command **/stanlee** with "help" or "support".
+
+The **@StanLeeBot** can also shorten long urls into a [mrvl.co](https://mrvl.co/) url. You can use the command **/mrvlco**. The format for the **/mrvlco** commands is as follows **/mrvlco** _LongUrl_ _YourEmailAddress_.
+
+**@StanLeeBot** asks for your email so that if you want to keep track of your short urls or view stats, you can log into the URL Shortening Service provided by [babou.io](https://babou.io). Don't worry, we won't email you or sell your email address to any third party. Your email address is to strictly create or update an account with [babou.io](https://babou.io) (which is also developed by [@ajtatum](https://github.com/ajtatum)).
 
 [![Add to Slack](https://platform.slack-edge.com/img/add_to_slack.png)](https://slack.com/oauth/authorize?client_id=248918156054.874765422194&scope=bot,commands,incoming-webhook)
 
-[Add To Telegram](https://t.me/TheStanLeeBot)
+---
+
+### Telegram
+
+**@TheStanLeeBot**  scours the Marvel and DC Comics website to find information that you're looking for.
+
+To learn more about anything Marvel or DC Comics related, use the commands **/marvel** and **/dc**.
+
+Here are some examples:
+
+* /marvel Ironman
+* /marvel Infinity Stones
+* /dc Batman
+* /dc Justice League Movie
+
+[![Add to Telegram](https://raw.githubusercontent.com/ajtatum/StanLeeBot/master/assets/add-to-telegram-button.png "Add to Telegram")](https://t.me/TheStanLeeBot)
 
 ---
 
