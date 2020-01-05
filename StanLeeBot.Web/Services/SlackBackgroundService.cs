@@ -22,7 +22,7 @@ namespace StanLeeBot.Web.Services
                 using var scope = _serviceProvider.CreateScope();
                 var slackService = scope.ServiceProvider.GetRequiredService<ISlackService>();
 
-                slackService.SendBotMessage();
+                //slackService.SendBotMessage();
                 return Task.CompletedTask;
 
             }, cancellationToken);

@@ -32,39 +32,39 @@ namespace StanLeeBot.Web.Services
             _appSettings = appSettings.CurrentValue;
         }
 
-        public async Task SendBotMessage()
-        {
-            var slackApiToken = _appSettings.Slack.ApiToken;
+        //public async Task SendBotMessage()
+        //{
+        //    var slackApiToken = _appSettings.Slack.ApiToken;
 
-            var bot = await SlackBot.InitializeAsync(slackApiToken, cfg =>
-            {
-                cfg.LoggerFactory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.ForContext<SlackService>());
-                cfg.OnSendMessageFailure = async (queue, msg, logger, e) =>
-                {
-                    if (msg.SendAttempts <= 5)
-                    {
-                        logger?.LogWarning("Failed to send message {MessageText}. Tried {SendAttempts} times", msg.Text, msg.SendAttempts);
-                        await Task.Delay(1000 * msg.SendAttempts);
-                        queue.Enqueue(msg);
-                        return;
-                    }
+        //    var bot = await SlackBot.InitializeAsync(slackApiToken, cfg =>
+        //    {
+        //        cfg.LoggerFactory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.ForContext<SlackService>());
+        //        cfg.OnSendMessageFailure = async (queue, msg, logger, e) =>
+        //        {
+        //            if (msg.SendAttempts <= 5)
+        //            {
+        //                logger?.LogWarning("Failed to send message {MessageText}. Tried {SendAttempts} times", msg.Text, msg.SendAttempts);
+        //                await Task.Delay(1000 * msg.SendAttempts);
+        //                queue.Enqueue(msg);
+        //                return;
+        //            }
 
-                    logger?.LogError("Gave up trying to send message {MessageText}", msg.Text);
-                };
-            });
+        //            logger?.LogError("Gave up trying to send message {MessageText}", msg.Text);
+        //        };
+        //    });
 
-            bot.When(Matches.Text("help"), HubType.DirectMessage, async conv =>
-            {
-                await conv.PostMessage(BuildHelpText(conv.From.Username)).ConfigureAwait(false);
-                conv.End();
-            });
+        //    bot.When(Matches.Text("help"), HubType.DirectMessage, async conv =>
+        //    {
+        //        _logger.LogInformation("StanLeeBot matched help in a DM");
+        //        await conv.PostMessage(BuildHelpText(conv.From.Username)).ConfigureAwait(false);
+        //    });
 
-            bot.When(Matches.Text("support"), HubType.DirectMessage, async conv =>
-            {
-                await conv.PostMessage("Sure, if you want to reach out go to https://stanleebot.com/Support").ConfigureAwait(false);
-                conv.End();
-            });
-        }
+        //    bot.When(Matches.Text("support"), HubType.DirectMessage, async conv =>
+        //    {
+        //        _logger.LogInformation("StanLeeBot matched support in a DM");
+        //        await conv.PostMessage("Sure, if you want to reach out go to https://stanleebot.com/Support").ConfigureAwait(false);
+        //    });
+        //}
 
         #region SlackSlashCommands
         public async Task GetMarvel(SlackCommandRequest slackCommandRequest)

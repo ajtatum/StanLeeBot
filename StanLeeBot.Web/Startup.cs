@@ -95,7 +95,7 @@ namespace StanLeeBot.Web
 
             services.AddTransient<IEmailService, EmailService>();
             services.AddSingleton<ISlackService, SlackService>();
-            services.AddHostedService<SlackBackgroundService>();
+            //services.AddHostedService<SlackBackgroundService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
