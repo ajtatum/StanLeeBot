@@ -1,4 +1,7 @@
 ﻿@page
+@inject IConfiguration Configuration
+
+@using Microsoft.Extensions.Configuration
 @model IndexModel
 @{
     ViewData["Title"] = "Home page";
@@ -45,7 +48,7 @@
                         For example, if you want information about Ironman you'd type /marvel Ironman. However, you can look up so much more!
                     </p>
                     <p class="text-center">
-                        <a href="https://slack.com/oauth/authorize?scope=incoming-webhook,commands,bot&client_id=248918156054.874765422194"><img alt="Add to Slack" width="200" src="https://platform.slack-edge.com/img/add_to_slack@2x.png" /></a>
+                        <a href="https://slack.com/oauth/authorize?scope=incoming-webhook,commands,bot&client_id=@Configuration["Slack:ClientId"]"><img alt="Add to Slack" width="200" src="https://platform.slack-edge.com/img/add_to_slack@2x.png" /></a>
                     </p>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="telegram">
@@ -63,7 +66,7 @@
                 </div>
             </div>
         </div>
-        
+
     </div>
-    
+
 </div>

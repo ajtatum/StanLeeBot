@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -7,6 +8,7 @@ using BabouExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using RestSharp;
 using Serilog;
 using SlackBotMessages;
 using SlackBotMessages.Enums;
@@ -51,30 +53,14 @@ namespace StanLeeBot.Web.Services
                 };
             });
 
-            bot.When(Matches.Text("hello").Or(Matches.Text("hi").Or(Matches.Text("hola"))), HubType.All, async conv =>
+            bot.When(Matches.Text("help"), HubType.DirectMessage, async conv =>
             {
-                _logger.LogInformation("StaLeeBot matched hello. {@Conversation}", conv);
-                await conv.PostMessage($"Hi {conv.From.Username}!").ConfigureAwait(false);
-                conv.End();
-            });
-
-            bot.When(Matches.Text("test"), HubType.All, async conv =>
-            {
-                _logger.LogInformation("StaLeeBot matched test. {@Conversation}", conv);
-                await conv.PostMessage($"I'm working {conv.From.Username}!").ConfigureAwait(false);
-                conv.End();
-            });
-
-            bot.When(Matches.Text("help"), HubType.All, async conv =>
-            {
-                _logger.LogInformation("StaLeeBot matched help. {@Conversation}", conv);
                 await conv.PostMessage(BuildHelpText(conv.From.Username)).ConfigureAwait(false);
                 conv.End();
             });
 
-            bot.When(Matches.Text("support"), HubType.All, async conv =>
+            bot.When(Matches.Text("support"), HubType.DirectMessage, async conv =>
             {
-                _logger.LogInformation("StanLeeBot matched support. {@Conversation}", conv);
                 await conv.PostMessage("Sure, if you want to reach out go to https://stanleebot.com/Support").ConfigureAwait(false);
                 conv.End();
             });
@@ -92,9 +78,20 @@ namespace StanLeeBot.Web.Services
                 var message = new Message();
 
                 var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
-                var snippet = gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString() ?? string.Empty;
+                
+                var snippet = gsrMetaTags.OgDescription;
+                if (snippet.IsNullOrWhiteSpace())
+                {
+                    snippet = gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString() ?? string.Empty;
+                }
 
                 var title = gsr.Items.ElementAtOrDefault(0)?.Title.Split("|").ElementAtOrDefault(0)?.Trim();
+
+                var website = gsrMetaTags.OgUrl;
+                if (website.IsNullOrWhiteSpace())
+                {
+                    website = gsr.Items.ElementAtOrDefault(0)?.Link;
+                }
 
                 var attachment = new Attachment()
                 {
@@ -102,7 +99,7 @@ namespace StanLeeBot.Web.Services
                     Pretext = $"Excelsior! I found {title} :star-struck:!"
                 }
                     .AddField("Name", title, true)
-                    .AddField("Website", gsrMetaTags.OgUrl, true)
+                    .AddField("Website", website, true)
                     .AddField("Bio", snippet)
                     .SetImage(gsr.Items[0].PageMap.CseImage[0].Src)
                     .SetColor(Color.Green);
@@ -167,6 +164,8 @@ namespace StanLeeBot.Web.Services
             var client = new SbmClient(slackCommandRequest.ResponseUrl);
             var message = new Message
             {
+                UnfurlLinks = false,
+                UnfurlMedia = false,
                 Text = slackCommandRequest.Text switch
                 {
                     "help" => BuildHelpText(slackCommandRequest.UserName),
@@ -183,16 +182,104 @@ namespace StanLeeBot.Web.Services
             else
                 _logger.LogError("GetStanLee: Tried responding to {MessageText} but received an error sending {@Message}", slackCommandRequest.Text, message);
         }
+
+        public async Task GetMrvlCoLink(SlackCommandRequest slackCommandRequest)
+        {
+            var client = new SbmClient(slackCommandRequest.ResponseUrl);
+            var message = new Message();
+            message.SetResponseType(ResponseType.Ephemeral);
+            message.UnfurlLinks = false;
+            message.UnfurlMedia = false;
+
+            var response = string.Empty;
+            var textList = slackCommandRequest.Text.Split(" ").ToList();
+            if (textList.Count() == 2)
+            {
+                var longUrl = textList[0];
+                var emailAddress = textList[1];
+
+                var urlIsValid = longUrl.IsValidUrl();
+                var emailIsValid = new EmailAddressAttribute().IsValid(emailAddress);
+
+                if (urlIsValid && emailIsValid)
+                {
+                    var restClient = new RestClient(_appSettings.UrlShortenerEndpoint);
+                    var restRequest = new RestRequest(Method.POST);
+                    restRequest.AddHeader("AuthKey", _appSettings.BabouAuthKeys.Slack);
+                    restRequest.AddHeader("longUrl", longUrl);
+                    restRequest.AddHeader("emailAddress", emailAddress);
+                    var restResponse = restClient.Execute(restRequest);
+
+                    if (!restResponse.ErrorMessage.IsNullOrWhiteSpace())
+                    {
+                        var stringBuilder = new StringBuilder();
+                        stringBuilder.AppendLine($"There was an error while processing your request. The error message is {restResponse.ErrorMessage}.");
+                        stringBuilder.AppendLine("If you continue to receive this error, please contact us at https://stanleebot.com/Support.");
+
+                        message.Text = stringBuilder.ToString();
+                        response = await client.SendAsync(message).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        var shortUrl = restResponse.Content;
+
+                        var stringBuilder = new StringBuilder();
+                        stringBuilder.AppendLine($"I've shortened {longUrl} to {shortUrl}");
+                        stringBuilder.AppendLine("If you want to manage your short url or view stats, go to https://babou.io.");
+                        stringBuilder.AppendLine($"If you haven't already, use the \"Forgot Password\" link on the login page and enter your email address ({emailAddress}) to reset your password.");
+
+                        message.Text = stringBuilder.ToString();
+                        response = await client.SendAsync(message).ConfigureAwait(false);
+                    }
+                }
+                else if (!urlIsValid)
+                {
+                    message.Text = $"The url you provided, {longUrl}, doesn't seem to be a valid URL. Please try again.";
+                    response = await client.SendAsync(message).ConfigureAwait(false);
+                }
+                else if (!emailIsValid)
+                {
+                    message.Text = $"The email address you provided, {emailAddress}, doesn't seem to be a valid email. Please try again.";
+                    response = await client.SendAsync(message).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                message.Text = "Please verify that your message is in the format of URL<space>EmailAddress";
+                response = await client.SendAsync(message).ConfigureAwait(false);
+            }
+
+            if (response == "ok")
+                _logger.LogInformation("GetMrvlCoLink: Responded to {MessageText} and sent message {@Message}", slackCommandRequest.Text, message);
+            else
+                _logger.LogError("GetMrvlCoLink: Tried responding to {MessageText} but received an error sending {@Message}", slackCommandRequest.Text, message);
+
+        }
         #endregion
 
         private string BuildHelpText(string username)
         {
             var stringBuilder = new StringBuilder();
             stringBuilder.AppendLine($"Never fear {username} I can help!");
-            stringBuilder.AppendLine("To learn more about anything Marvel or DC Comics related, use the slash commands /marvel and /dc.");
-            stringBuilder.AppendLine("For example, if you want to lookup Ironman you'd type /marvel Ironman");
+            stringBuilder.AppendLine("To learn more about anything Marvel or DC Comics related, use the slash commands */marvel* and */dc*.");
             stringBuilder.AppendLine();
-            stringBuilder.AppendLine("If you're looking for support, go to https://stanleebot.com/Support");
+            stringBuilder.AppendLine("Here are some examples:");
+            stringBuilder.AppendLine("* /marvel Ironman");
+            stringBuilder.AppendLine("* /marvel Infinity Stones");
+            stringBuilder.AppendLine("* /dc Batman");
+            stringBuilder.AppendLine("* /dc Justice League Movie");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("I can also shorten long urls using the command */mrvlco*. Here's the format:");
+            stringBuilder.AppendLine("* /mrvlco LongUrl YourEmailAddress");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("This will generate a https://mrvl.co/ url.");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("I ask for your email so that if you want to keep track of your short urls or view stats, ");
+            stringBuilder.Append("you can log into the URL Shortening Service provided by https://babou.io.");
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine();
+            stringBuilder.AppendLine("If you have any other questions, concerns, or need more help go to https://stanleebot.com/Support");
 
             return stringBuilder.ToString();
         }

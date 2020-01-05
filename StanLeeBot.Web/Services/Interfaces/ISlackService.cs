@@ -9,5 +9,6 @@ namespace StanLeeBot.Web.Services.Interfaces
         Task GetMarvel(SlackCommandRequest slackCommandRequest);
         Task GetDcComics(SlackCommandRequest slackCommandRequest);
         Task GetStanLee(SlackCommandRequest slackCommandRequest);
+        Task GetMrvlCoLink(SlackCommandRequest slackCommandRequest);
     }
 }

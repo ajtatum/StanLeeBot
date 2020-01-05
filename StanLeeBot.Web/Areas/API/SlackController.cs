@@ -69,6 +69,9 @@ namespace StanLeeBot.Web.Areas.API
                 case "/stanlee":
                     await _slackService.GetStanLee(slackCommandRequest);
                     return new OkResult();
+                case "/mrvlco":
+                    await _slackService.GetMrvlCoLink(slackCommandRequest);
+                    return new OkResult();
                 default:
                     return new BadRequestResult();
             }

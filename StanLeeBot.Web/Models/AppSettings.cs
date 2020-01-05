@@ -3,6 +3,7 @@
     public class AppSettings
     {
         public ApplicationInsightsSettings ApplicationInsights { get; set; }
+        public BabouAuthKeySettings BabouAuthKeys { get; set; }
         public AzureSettings Azure { get; set; }
         public string BuildNumber { get; set; }
         public EmailSenderSettings EmailSender { get; set; }
@@ -10,11 +11,17 @@
         public string IpStackApiKey { get; set; }
         public SlackSettings Slack { get; set; }
         public TelegramSettings Telegram { get; set; }
+        public string UrlShortenerEndpoint { get; set; }
     }
 
     public class ApplicationInsightsSettings
     {
         public string InstrumentationKey { get; set; }
+    }
+
+    public class BabouAuthKeySettings
+    {
+        public string Slack { get; set; }
     }
 
     public class AzureSettings
