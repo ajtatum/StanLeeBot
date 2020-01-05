@@ -69,7 +69,7 @@
                         <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".slack-examples">View some examples</button>
                     </div>
                     <p class="text-center pad-top-10">
-                        <a href="https://slack.com/oauth/authorize?client_id=@Configuration["Slack:ClientId"]&scope=commands,incoming-webhook"><img alt="Add to Slack" width="200" src="https://platform.slack-edge.com/img/add_to_slack@2x.png" /></a>
+                        <a href="https://slack.com/oauth/authorize?client_id=@Configuration["Slack:ClientId"]&scope=@Configuration["Slack:Scopes"]&state=@Model.SlackState"><img alt="Add to Slack" width="200" src="https://platform.slack-edge.com/img/add_to_slack@2x.png" /></a>
                     </p>
                 </div>
                 <div role="tabpanel" class="tab-pane" id="telegram">

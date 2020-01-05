@@ -21,7 +21,7 @@ The **@StanLeeBot** can also shorten long urls into a [mrvl.co](https://mrvl.co/
 
 **@StanLeeBot** asks for your email so that if you want to keep track of your short urls or view stats, you can log into the URL Shortening Service provided by [babou.io](https://babou.io). Don't worry, we won't email you or sell your email address to any third party. Your email address is to strictly create or update an account with [babou.io](https://babou.io) (which is also developed by [@ajtatum](https://github.com/ajtatum)).
 
-[![Add to Slack](https://platform.slack-edge.com/img/add_to_slack.png)](https://slack.com/oauth/authorize?client_id=248918156054.874765422194&scope=commands,incoming-webhook)
+[![Add to Slack](https://platform.slack-edge.com/img/add_to_slack.png)](https://stanleebot.com/slack-direct)
 
 ---
 

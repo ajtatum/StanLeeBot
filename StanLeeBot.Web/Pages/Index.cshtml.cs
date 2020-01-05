@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using StanLeeBot.Web.Models;
 
 namespace StanLeeBot.Web.Pages
 {
@@ -13,8 +15,14 @@ namespace StanLeeBot.Web.Pages
             _logger = logger;
         }
 
+        public string SlackState { get; set; }
+
         public IActionResult OnGet()
         {
+            var slackState = Guid.NewGuid().ToString("N");
+            SlackState = slackState;
+            Response.Cookies.Append(Constants.StanLeeSlackStateCookieName, slackState);
+
             return Page();
         }
     }
