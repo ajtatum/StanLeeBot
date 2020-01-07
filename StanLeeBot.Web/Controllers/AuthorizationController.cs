@@ -103,7 +103,6 @@ namespace StanLeeBot.Web.Controllers
 
             var url = $"https://slack.com/oauth/authorize?client_id={_appSettings.Slack.ClientId}&scope={_appSettings.Slack.Scopes}&state={slackState}";
 
-            
             return Redirect(url);
         }
 

@@ -186,6 +186,12 @@ namespace StanLeeBot.Web.Services
         public async Task GetMrvlCoLink(SlackCommandRequest slackCommandRequest)
         {
             var client = new SbmClient(slackCommandRequest.ResponseUrl);
+            var firstResponse = new Message();
+            firstResponse.SetResponseType(ResponseType.Ephemeral);
+            firstResponse.Text = "Sure thing! Let me get to work!";
+            await client.SendAsync(firstResponse).ConfigureAwait(false);
+
+
             var message = new Message();
             message.SetResponseType(ResponseType.Ephemeral);
             message.UnfurlLinks = false;
@@ -208,7 +214,7 @@ namespace StanLeeBot.Web.Services
                     restRequest.AddHeader("AuthKey", _appSettings.BabouAuthKeys.Slack);
                     restRequest.AddHeader("longUrl", longUrl);
                     restRequest.AddHeader("emailAddress", emailAddress);
-                    var restResponse = restClient.Execute(restRequest);
+                    var restResponse = await restClient.ExecuteTaskAsync(restRequest);
 
                     if (!restResponse.ErrorMessage.IsNullOrWhiteSpace())
                     {
