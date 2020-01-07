@@ -1,19 +1,12 @@
 using System;
-using System.Net.Http;
-using System.Security.Claims;
-using AspNet.Security.OAuth.Slack;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Newtonsoft.Json.Linq;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Services;
 using StanLeeBot.Web.Services.Interfaces;
@@ -41,61 +34,18 @@ namespace StanLeeBot.Web
                 .PersistKeysToAzureBlobStorage(container, $"{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/dataprotectionkeys.xml")
                 .ProtectKeysWithAzureKeyVault(Configuration["Azure:KeyVault:EncryptionKey"], Configuration["Azure:KeyVault:ClientId"], Configuration["Azure:KeyVault:ClientSecret"]);
 
-            var slackState = Guid.NewGuid().ToString("N");
-
-            services.AddAuthentication(options =>
-                    {
-                        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    })
-                    .AddCookie(options =>
-                    {
-                        options.LoginPath = "/login";
-                        options.LogoutPath = "/logout";
-                    })
-                     .AddSlack(options =>
-                    {
-                        options.ClientId = Configuration["Slack:ClientId"];
-                        options.ClientSecret = Configuration["Slack:ClientSecret"];
-                        options.CallbackPath = $"{SlackAuthenticationDefaults.CallbackPath}?state={slackState}";
-                        options.ReturnUrlParameter = new PathString("/");
-                        options.Events = new OAuthEvents()
-                        {
-                            OnCreatingTicket = async context =>
-                            {
-                                var request = new HttpRequestMessage(HttpMethod.Get, $"{context.Options.UserInformationEndpoint}?token={context.AccessToken}");
-                                var response = await context.Backchannel.SendAsync(request, context.HttpContext.RequestAborted);
-                                response.EnsureSuccessStatusCode();
-                                var userObject = JObject.Parse(await response.Content.ReadAsStringAsync());
-                                var user = userObject.SelectToken("user");
-                                var userId = user.Value<string>("id");
-
-
-                                if (!string.IsNullOrEmpty(userId))
-                                {
-                                    context.Identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userId, ClaimValueTypes.String, context.Options.ClaimsIssuer));
-                                }
-
-                                var fullName = user.Value<string>("name");
-                                if (!string.IsNullOrEmpty(fullName))
-                                {
-                                    context.Identity.AddClaim(new Claim(ClaimTypes.Name, fullName, ClaimValueTypes.String, context.Options.ClaimsIssuer));
-                                }
-                            }
-                        };
-                    });
-
             services.AddMvc();
             services.AddRazorPages()
                 .AddRazorRuntimeCompilation();
 
             services.Configure<AppSettings>(Configuration);
 
+            services.AddScoped<ISlackService, SlackService>();
+            services.AddScoped<IGoogleCustomSearch, GoogleCustomSearch>();
             services.AddScoped<ITelegramMessagingService, TelegramMessagingService>();
             services.AddSingleton<ITelegramBotService, TelegramBotService>();
 
             services.AddTransient<IEmailService, EmailService>();
-            services.AddSingleton<ISlackService, SlackService>();
-            //services.AddHostedService<SlackBackgroundService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -115,9 +65,6 @@ namespace StanLeeBot.Web
             app.UseStaticFiles();
 
             app.UseRouting();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {

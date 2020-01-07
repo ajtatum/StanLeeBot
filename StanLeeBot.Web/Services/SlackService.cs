@@ -1,23 +1,16 @@
-﻿using System;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using BabouExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using RestSharp;
-using Serilog;
 using SlackBotMessages;
 using SlackBotMessages.Enums;
 using SlackBotMessages.Models;
-using SlackBotNet;
-using SlackBotNet.State;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Services.Interfaces;
-using static SlackBotNet.MatchFactory;
 
 namespace StanLeeBot.Web.Services
 {
@@ -25,52 +18,20 @@ namespace StanLeeBot.Web.Services
     {
         private readonly ILogger<SlackService> _logger;
         private readonly AppSettings _appSettings;
+        private readonly IGoogleCustomSearch _googleCustomSearch;
 
-        public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings)
+        public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings, IGoogleCustomSearch googleCustomSearch)
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
+            _googleCustomSearch = googleCustomSearch;
         }
-
-        //public async Task SendBotMessage()
-        //{
-        //    var slackApiToken = _appSettings.Slack.ApiToken;
-
-        //    var bot = await SlackBot.InitializeAsync(slackApiToken, cfg =>
-        //    {
-        //        cfg.LoggerFactory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Log.ForContext<SlackService>());
-        //        cfg.OnSendMessageFailure = async (queue, msg, logger, e) =>
-        //        {
-        //            if (msg.SendAttempts <= 5)
-        //            {
-        //                logger?.LogWarning("Failed to send message {MessageText}. Tried {SendAttempts} times", msg.Text, msg.SendAttempts);
-        //                await Task.Delay(1000 * msg.SendAttempts);
-        //                queue.Enqueue(msg);
-        //                return;
-        //            }
-
-        //            logger?.LogError("Gave up trying to send message {MessageText}", msg.Text);
-        //        };
-        //    });
-
-        //    bot.When(Matches.Text("help"), HubType.DirectMessage, async conv =>
-        //    {
-        //        _logger.LogInformation("StanLeeBot matched help in a DM");
-        //        await conv.PostMessage(BuildHelpText(conv.From.Username)).ConfigureAwait(false);
-        //    });
-
-        //    bot.When(Matches.Text("support"), HubType.DirectMessage, async conv =>
-        //    {
-        //        _logger.LogInformation("StanLeeBot matched support in a DM");
-        //        await conv.PostMessage("Sure, if you want to reach out go to https://stanleebot.com/Support").ConfigureAwait(false);
-        //    });
-        //}
 
         #region SlackSlashCommands
         public async Task GetMarvel(SlackCommandRequest slackCommandRequest)
         {
             var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
-            var gsr = await GetGoogleSearchSlackResponseJson(slackCommandRequest.Text, marvelGoogleCx);
+            var gsr = await _googleCustomSearch.GetResponse(slackCommandRequest.Text, marvelGoogleCx);
 
             if (gsr != null)
             {
@@ -122,7 +83,7 @@ namespace StanLeeBot.Web.Services
         public async Task GetDcComics(SlackCommandRequest slackCommandRequest)
         {
             var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
-            var gsr = await GetGoogleSearchSlackResponseJson(slackCommandRequest.Text, dcComicsCx);
+            var gsr = await _googleCustomSearch.GetResponse(slackCommandRequest.Text, dcComicsCx);
 
             if (gsr != null)
             {
@@ -190,7 +151,6 @@ namespace StanLeeBot.Web.Services
             firstResponse.SetResponseType(ResponseType.Ephemeral);
             firstResponse.Text = "Sure thing! Let me get to work!";
             await client.SendAsync(firstResponse).ConfigureAwait(false);
-
 
             var message = new Message();
             message.SetResponseType(ResponseType.Ephemeral);
@@ -289,30 +249,5 @@ namespace StanLeeBot.Web.Services
 
             return stringBuilder.ToString();
         }
-
-        private async Task<GoogleSearchResponse> GetGoogleSearchSlackResponseJson(string search, string cse)
-        {
-            var googleApiKey = _appSettings.GoogleCustomSearch.ApiKey;
-
-            var url = $"https://www.googleapis.com/customsearch/v1?cx={cse}&key={googleApiKey}&q={search}";
-            var result = string.Empty;
-
-            try
-            {
-                using (var client = new HttpClient())
-                {
-                    result = await client.GetStringAsync(url);
-                }
-
-                var googleSearchResponse = JsonConvert.DeserializeObject<GoogleSearchResponse>(result);
-                return googleSearchResponse;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Using search {Url} return result: {Result}", url, result);
-                return null;
-            }
-        }
-
     }
 }

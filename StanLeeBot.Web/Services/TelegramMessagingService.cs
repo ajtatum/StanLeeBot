@@ -19,12 +19,15 @@ namespace StanLeeBot.Web.Services
         private readonly ITelegramBotService _botService;
         private readonly ILogger<TelegramMessagingService> _logger;
         private readonly AppSettings _appSettings;
+        private readonly IGoogleCustomSearch _googleCustomSearch;
 
-        public TelegramMessagingService(ITelegramBotService botService, ILogger<TelegramMessagingService> logger, IOptionsMonitor<AppSettings> appSettings)
+        public TelegramMessagingService(ITelegramBotService botService, ILogger<TelegramMessagingService> logger,
+                                        IOptionsMonitor<AppSettings> appSettings, IGoogleCustomSearch googleCustomSearch)
         {
             _botService = botService;
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
+            _googleCustomSearch = googleCustomSearch;
         }
 
         public async Task HandleMessage(Update update)
@@ -81,7 +84,7 @@ namespace StanLeeBot.Web.Services
         public async Task<string> GetMarvel(string lookingFor)
         {
             var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
-            var gsr = await GetGoogleSearchSlackResponseJson(lookingFor, marvelGoogleCx);
+            var gsr = await _googleCustomSearch.GetResponse(lookingFor, marvelGoogleCx);
 
             var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
 
@@ -114,7 +117,7 @@ namespace StanLeeBot.Web.Services
         public async Task<string> GetDcComics(string lookingFor)
         {
             var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
-            var gsr = await GetGoogleSearchSlackResponseJson(lookingFor, dcComicsCx);
+            var gsr = await _googleCustomSearch.GetResponse(lookingFor, dcComicsCx);
 
             var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
 
@@ -142,30 +145,6 @@ namespace StanLeeBot.Web.Services
             }
 
             return snippet;
-        }
-
-        private async Task<GoogleSearchResponse> GetGoogleSearchSlackResponseJson(string search, string cse)
-        {
-            var googleApiKey = _appSettings.GoogleCustomSearch.ApiKey;
-
-            var url = $"https://www.googleapis.com/customsearch/v1?cx={cse}&key={googleApiKey}&q={search}";
-            var result = string.Empty;
-
-            try
-            {
-                using (var client = new HttpClient())
-                {
-                    result = await client.GetStringAsync(url);
-                }
-
-                var googleSearchResponse = JsonConvert.DeserializeObject<GoogleSearchResponse>(result);
-                return googleSearchResponse;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Using search {Url} return result: {Result}", url, result);
-                return null;
-            }
         }
     }
 }
