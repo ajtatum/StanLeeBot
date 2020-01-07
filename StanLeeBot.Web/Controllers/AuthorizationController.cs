@@ -2,8 +2,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using BabouExtensions;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -23,12 +21,6 @@ namespace StanLeeBot.Web.Controllers
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
-        }
-
-        [HttpGet("~/login")]
-        public IActionResult SignIn()
-        {
-            return Challenge(new AuthenticationProperties { RedirectUri = "/" }, "Slack");
         }
 
         [HttpGet("~/signin-slack")]
@@ -104,13 +96,6 @@ namespace StanLeeBot.Web.Controllers
             var url = $"https://slack.com/oauth/authorize?client_id={_appSettings.Slack.ClientId}&scope={_appSettings.Slack.Scopes}&state={slackState}";
 
             return Redirect(url);
-        }
-
-        [HttpGet("~/logout"), HttpPost("~/logout")]
-        public IActionResult SignOut()
-        {
-            return SignOut(new AuthenticationProperties { RedirectUri = "/" },
-                CookieAuthenticationDefaults.AuthenticationScheme);
         }
     }
 }

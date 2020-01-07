@@ -15,7 +15,6 @@
 
   <ItemGroup>
     <PackageReference Include="AJT.Defaults.Serilog" Version="1.0.1" />
-    <PackageReference Include="AspNet.Security.OAuth.Slack" Version="3.0.0" />
     <PackageReference Include="BabouExtensions" Version="1.2.41" />
     <PackageReference Include="BabouExtensions.AspNetCore" Version="1.2.41" />
     <PackageReference Include="BabouMail.MailGun" Version="1.1.7" />
