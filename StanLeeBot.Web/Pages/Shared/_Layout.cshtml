@@ -6,9 +6,16 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StanLeeBot - @ViewData["Title"]</title>
+    @if (Convert.ToString(ViewData["Title"]) == "Home page")
+    {
+        <title>StanLeeBot</title>
+    }
+    else
+    {
+        <title>StanLeeBot - @ViewData["Title"]</title>
+    }
+    <partial name="_SocialMetatags" />
     <partial name="_Favicons" />
-    <meta name="slack-app-id" content="ARQNHCE5Q">
     <environment include="Development">
         <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
         <link rel="stylesheet" href="~/lib/font-awesome/css/all.css" />
@@ -36,19 +43,8 @@
                             <a class="nav-link text-white" asp-area="" asp-page="/Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-white" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link text-white" asp-area="" asp-page="/Support">Support</a>
                         </li>
-                        @*@if (User.Identity.IsAuthenticated)
-                            {
-                                <li><a class="nav-link text-dark" href="~/logout">Logout</a></li>
-                            }
-                            else
-                            {
-                                <li><a class="nav-link text-dark" href="~/login">Login</a></li>
-                            }*@
                     </ul>
                 </div>
             </div>
@@ -65,7 +61,10 @@
 
     <footer class="border-top footer text-muted line-height-30">
         <div class="container">
-            &copy; @DateTime.Now.Year - StanLeeBot - Build: @Configuration["BuildNumber"]
+            &copy; @DateTime.Now.Year - StanLeeBot - Build: @Configuration["BuildNumber"] - <a class="text-lightblue" asp-area="" asp-page="/Terms">Terms & Conditions</a> - <a class="text-lightblue" asp-area="" asp-page="/Privacy">Privacy Policy</a> - <a class="text-lightblue" asp-area="" asp-page="/Support">Support</a>
+            <div class="float-right">
+                <a href="https://www.facebook.com/TheStanLeeBot/"><i class="fab fa-2x fa-facebook-square text-brand-facebook"></i></a> <a href="https://twitter.com/StanLeeBot"><i class="fab fa-2x fa-twitter-square text-brand-twitter"></i></a>
+            </div>
         </div>
         <div class="container">
             Developed by <a class="text-lightblue" href="http://s.babou.io/aj?src=https://stanleebot.com" target="_blank">AJ Tatum</a>
