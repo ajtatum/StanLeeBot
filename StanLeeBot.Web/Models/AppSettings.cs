@@ -48,9 +48,10 @@
 
     public class DialogFlowSettings
     {
-        public string ApiKey { get; set; }
         public string ClientAccessToken { get; set; }
+        public string CredentialsFilePath { get; set; }
         public string DeveloperAccessToken { get; set; }
+        public string ProjectId { get; set; }
     }
 
     public class EmailSenderSettings

@@ -6,7 +6,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using Google.Api.Gax.Grpc;
+using Google.Apis.Auth.OAuth2;
 using Google.Cloud.Dialogflow.V2;
+using Grpc.Auth;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -65,32 +67,31 @@ namespace StanLeeBot.Web.Areas.API
         [HttpGet("dialogflow")]
         public async Task<IActionResult> GetAiResponse()
         {
-            var serviceEndpoint = new ServiceEndpoint($"https://{SessionsClient.DefaultEndpoint.Host}?key={_appSettings.DialogFlow.ApiKey}");
+            // Backup method in case Azure is unhappy
+            //var cred = GoogleCredential.FromFile(_appSettings.DialogFlow.CredentialsFilePath);
+            //var channel = new Channel(SessionsClient.DefaultEndpoint.Host, 
+            //    SessionsClient.DefaultEndpoint.Port, cred.ToChannelCredentials());
 
-            var client = await SessionsClient.CreateAsync();
+            var sessionId = Guid.NewGuid().ToString("N");
+            var sessionsClient = await SessionsClient.CreateAsync();
 
-            var responseText = string.Empty;
-            var texts = new[] {"Hi", "Hey"};
-            foreach (var text in texts)
+            var requestIntent = new DetectIntentRequest
             {
-                var response = await client.DetectIntentAsync(
-                    session: new SessionName("", "123456"),
-                    queryInput: new QueryInput()
-                    {
-                        Text = new TextInput()
-                        {
-                            Text = text,
-                            LanguageCode = "en-US"
-                        }
-                    });
-
-                var queryResult = response.QueryResult;
-
-                if (queryResult.Intent != null)
+                SessionAsSessionName = new SessionName(_appSettings.DialogFlow.ProjectId, sessionId),
+                QueryInput = new QueryInput()
                 {
-                    responseText = queryResult.FulfillmentText;
+                    Text = new TextInput()
+                    {
+                        Text = "Hi",
+                        LanguageCode = "en-US"
+                    }
                 }
-            }
+            };
+
+            var responseIntent = await sessionsClient.DetectIntentAsync(requestIntent);
+
+            var responseText = responseIntent.QueryResult?.FulfillmentText ?? "Sorry, I didn't understand.";
+
             return new OkObjectResult(responseText);
         }
     }
