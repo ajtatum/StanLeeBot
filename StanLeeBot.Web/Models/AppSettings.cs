@@ -6,7 +6,9 @@
         public BabouAuthKeySettings BabouAuthKeys { get; set; }
         public AzureSettings Azure { get; set; }
         public string BuildNumber { get; set; }
+        public DialogFlowSettings DialogFlow { get; set; }
         public EmailSenderSettings EmailSender { get; set; }
+        public FacebookSettings Facebook { get; set; }
         public GoogleCustomSearchSettings GoogleCustomSearch { get; set; }
         public string IpStackApiKey { get; set; }
         public SlackSettings Slack { get; set; }
@@ -44,6 +46,13 @@
         }
     }
 
+    public class DialogFlowSettings
+    {
+        public string ApiKey { get; set; }
+        public string ClientAccessToken { get; set; }
+        public string DeveloperAccessToken { get; set; }
+    }
+
     public class EmailSenderSettings
     {
         public string ApiKey { get; set; }
@@ -52,6 +61,13 @@
         public string FromEmail { get; set; }
         public string ToEmail { get; set; }
         public string ToName { get; set; }
+    }
+
+    public class FacebookSettings
+    {
+        public string VerificationToken { get; set; }
+        public string PageToken { get; set; }
+        public string PostURL { get; set; }
     }
 
     public class GoogleCustomSearchSettings
