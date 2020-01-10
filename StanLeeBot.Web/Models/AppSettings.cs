@@ -51,6 +51,8 @@
         public string ClientAccessToken { get; set; }
         public string CredentialsFilePath { get; set; }
         public string DeveloperAccessToken { get; set; }
+        public string HeaderName { get; set; }
+        public string HeaderValue { get; set; }
         public string ProjectId { get; set; }
     }
 
