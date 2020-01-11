@@ -37,7 +37,7 @@ namespace StanLeeBot.Web
                     {
                         configApp.AddUserSecrets<Program>();
                     }
-                    if (hostContext.HostingEnvironment.IsProduction())
+                    if (hostContext.HostingEnvironment.IsProduction() || hostContext.HostingEnvironment.IsStaging())
                     {
                         var azureServiceTokenProvider = new AzureServiceTokenProvider();
                         var keyVaultClient = new KeyVaultClient(
@@ -49,7 +49,7 @@ namespace StanLeeBot.Web
                             Client = keyVaultClient,
                             Manager = new DefaultKeyVaultSecretManager(),
                             Vault = $"https://{Environment.GetEnvironmentVariable("AzureKeyVaultName")}.vault.azure.net/",
-                            ReloadInterval = TimeSpan.FromDays(1)
+                            ReloadInterval = TimeSpan.FromMinutes(30)
                         });
                     }
                 })
