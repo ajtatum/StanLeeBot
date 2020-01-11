@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BabouExtensions;
 using BabouExtensions.AspNetCore;
 using Google.Cloud.Dialogflow.V2;
+using Google.Protobuf.Collections;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -54,10 +55,10 @@ namespace StanLeeBot.Web.Areas.API
                 switch (intentName)
                 {
                     case Constants.DialogFlow.HelloMarvelLookupId:
-                        webHookResponse.FulfillmentText = await GetMarvel(searchFor);
+                        webHookResponse.FulfillmentMessages.Add(await GetMarvelCard(searchFor));
                         break;
                     case Constants.DialogFlow.HelloDCLookupId:
-                        webHookResponse.FulfillmentText = await GetDcComics(searchFor);
+                        webHookResponse.FulfillmentMessages.Add(await GetDcComicsCard(searchFor));
                         break;
                     default:
                         webHookResponse.FulfillmentText = "Sorry, but I don't understand.";
@@ -68,6 +69,94 @@ namespace StanLeeBot.Web.Areas.API
             }
 
             return new UnauthorizedResult();
+        }
+
+        private async Task<RepeatedField<Intent.Types.Message>> GetMarvelCard(string lookingFor)
+        {
+            var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
+            var gsr = await _googleCustomSearch.GetResponse(lookingFor, marvelGoogleCx);
+
+            var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
+
+            var backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/MarvelCard.png";
+
+            var marvelCard = new Intent.Types.Message.Types.Card
+            {
+                Title = "Sorry", 
+                Subtitle = $"Couldn't find anything for {lookingFor}", 
+                ImageUri = backupImage
+            };
+
+            if (gsr != null)
+            {
+                var title = gsr.Items.ElementAtOrDefault(0)?.Title.Split("|").ElementAtOrDefault(0)?.Trim() ?? lookingFor;
+                marvelCard.Title = title;
+
+                var bio = gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString() ?? string.Empty;
+                marvelCard.Subtitle = bio;
+
+                marvelCard.ImageUri = gsr.Items.ElementAtOrDefault(0)?.PageMap.CseImage.ElementAtOrDefault(0)?.Src ?? backupImage;
+                
+                marvelCard.Buttons.Add(new Intent.Types.Message.Types.Card.Types.Button()
+                {
+                    Postback = gsrMetaTags.OgUrl,
+                    Text = "Excelsior! Read more..."
+                });
+            }
+
+            var messages = new RepeatedField<Intent.Types.Message>
+            {
+                new Intent.Types.Message()
+                {
+                    Card = marvelCard
+                }
+            };
+
+            return messages;
+        }
+
+        private async Task<RepeatedField<Intent.Types.Message>> GetDcComicsCard(string lookingFor)
+        {
+            var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
+            var gsr = await _googleCustomSearch.GetResponse(lookingFor, dcComicsCx);
+
+            var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
+
+            var backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/DCCard.png";
+
+            var dcCard = new Intent.Types.Message.Types.Card
+            {
+                Title = "Sorry",
+                Subtitle = $"Couldn't find anything for {lookingFor}",
+                ImageUri = backupImage
+            };
+
+            if (gsr != null)
+            {
+                var title = gsrMetaTags.OgTitle ?? lookingFor;
+                dcCard.Title = title;
+
+                var bio = gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString() ?? string.Empty;
+                dcCard.Subtitle = bio;
+
+                dcCard.ImageUri = gsr.Items.ElementAtOrDefault(0)?.PageMap.CseThumbnail.ElementAtOrDefault(0)?.Src ?? backupImage;
+
+                dcCard.Buttons.Add(new Intent.Types.Message.Types.Card.Types.Button()
+                {
+                    Postback = gsrMetaTags.OgUrl,
+                    Text = "Excelsior! Read more..."
+                });
+            }
+
+            var messages = new RepeatedField<Intent.Types.Message>
+            {
+                new Intent.Types.Message()
+                {
+                    Card = dcCard
+                }
+            };
+
+            return messages;
         }
 
         // This is only temporary, copying from Telegram
