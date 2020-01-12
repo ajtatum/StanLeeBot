@@ -141,8 +141,10 @@ namespace StanLeeBot.Web.Areas.API
 
                     _logger.LogDebug("DialogFlow: GetMarvelCard - Card built for {SearchTerm}.", searchTerm);
                 }
-
-                _logger.LogError("DialogFlow: GetMarvelCard - Metatags are null for {SearchTerm}", searchTerm);
+                else
+                {
+                    _logger.LogError("DialogFlow: GetMarvelCard - Metatags are null for {SearchTerm}", searchTerm);
+                }
             }
             catch (Exception ex)
             {
@@ -200,8 +202,10 @@ namespace StanLeeBot.Web.Areas.API
 
                     _logger.LogDebug("DialogFlow: GetDcComicsCard - Card built for {SearchTerm}.", searchTerm);
                 }
-
-                _logger.LogError("DialogFlow: GetDcComicsCard - Metatags are null for {SearchTerm}", searchTerm);
+                else
+                {
+                    _logger.LogError("DialogFlow: GetDcComicsCard - Metatags are null for {SearchTerm}", searchTerm);
+                }
             }
             catch (Exception ex)
             {
