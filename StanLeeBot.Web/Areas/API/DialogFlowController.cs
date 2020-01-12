@@ -59,38 +59,43 @@ namespace StanLeeBot.Web.Areas.API
                     var webhookRequest = JsonConvert.DeserializeObject<WebhookRequest>(requestBody);
                     _logger.LogInformation("DialogFlow: Received WebHookRequest: {WebHookRequest}", webhookRequest);
 
+                    var sessionId = webhookRequest.Session;
+                    sessionId = sessionId.Substring(sessionId.LastIndexOf("/", StringComparison.Ordinal) + 1);
+
                     var intentName = webhookRequest.QueryResult.Intent.Name;
                     intentName = intentName.Substring(intentName.LastIndexOf("/", StringComparison.Ordinal) + 1);
 
                     var queryText = webhookRequest.QueryResult.QueryText;
 
-                    _logger.LogInformation("DialogFlow: Processing request for intent {Intent} and queryText {QueryText}", intentName, queryText);
+                    _logger.LogInformation("DialogFlow: Processing request for intent {Intent} and queryText {QueryText}. SessionId: {SessionId}.", intentName, queryText, sessionId);
 
                     var webHookResponse = new WebhookResponse();
 
                     switch (intentName)
                     {
                         case Constants.DialogFlow.HelloMarvelLookupId:
-                            _logger.LogDebug("DialogFlow: Beginning to request Marvel Lookup.");
-                            webHookResponse.FulfillmentMessages.Add(await GetMarvelCard(queryText));
+                            _logger.LogDebug("DialogFlow: Beginning to request Marvel Lookup. SessionId: {SessionId}.", sessionId);
+                            webHookResponse.FulfillmentMessages.Add(await GetMarvelCard(queryText, sessionId));
                             break;
                         case Constants.DialogFlow.HelloDCLookupId:
-                            _logger.LogDebug("DialogFlow: Beginning to request DC Comics Lookup.");
-                            webHookResponse.FulfillmentMessages.Add(await GetDcComicsCard(queryText));
+                            _logger.LogDebug("DialogFlow: Beginning to request DC Comics Lookup. SessionId: {SessionId}.", sessionId);
+                            webHookResponse.FulfillmentMessages.Add(await GetDcComicsCard(queryText, sessionId));
                             break;
                         default:
-                            _logger.LogDebug("DialogFlow: Unhandled intent: {IntentName}", intentName);
+                            _logger.LogWarning("DialogFlow: Unhandled intent: {IntentName}. SessionId: {SessionId}.", intentName, sessionId);
                             webHookResponse.FulfillmentText = "Sorry, but I don't understand.";
                             break;
                     }
 
                     return new OkObjectResult(webHookResponse);
                 }
-
-                if (authHeader.IsNullOrWhiteSpace())
-                    _logger.LogError("DialogFlow: Request header is absent.");
                 else
-                    _logger.LogError("DialogFlow: Request header do not match. Value sent: {AuthHeader}", authHeader);
+                {
+                    if (authHeader.IsNullOrWhiteSpace())
+                        _logger.LogError("DialogFlow: Request header is absent.");
+                    else
+                        _logger.LogError("DialogFlow: Request header do not match. Value sent: {AuthHeader}", authHeader);
+                }
             }
             catch (Exception ex)
             {
@@ -101,11 +106,11 @@ namespace StanLeeBot.Web.Areas.API
             return new UnauthorizedResult();
         }
 
-        private async Task<RepeatedField<Intent.Types.Message>> GetMarvelCard(string searchTerm)
+        private async Task<RepeatedField<Intent.Types.Message>> GetMarvelCard(string searchTerm, string sessionId)
         {
-            _logger.LogInformation("DialogFlow: GetMarvelCard - Received request to search for {SearchTerm}", searchTerm);
+            _logger.LogInformation("DialogFlow: GetMarvelCard - Received request to search for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
-            var backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/MarvelCard.png";
+            const string backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/MarvelCard.png";
 
             var marvelCard = new Intent.Types.Message.Types.Card
             {
@@ -123,7 +128,7 @@ namespace StanLeeBot.Web.Areas.API
 
                 if (gsrMetaTags != null)
                 {
-                    _logger.LogDebug("DialogFlow: GetMarvelCard - Beginning to build card for {SearchTerm}.", searchTerm);
+                    _logger.LogDebug("DialogFlow: GetMarvelCard - Beginning to build card for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
                     var title = gsr.Items.ElementAtOrDefault(0)?.Title.Split("|").ElementAtOrDefault(0)?.Trim() ?? searchTerm;
                     marvelCard.Title = title;
@@ -139,16 +144,16 @@ namespace StanLeeBot.Web.Areas.API
                         Text = "Excelsior! Read more..."
                     });
 
-                    _logger.LogDebug("DialogFlow: GetMarvelCard - Card built for {SearchTerm}.", searchTerm);
+                    _logger.LogDebug("DialogFlow: GetMarvelCard - Card built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
                 else
                 {
-                    _logger.LogError("DialogFlow: GetMarvelCard - Metatags are null for {SearchTerm}", searchTerm);
+                    _logger.LogError("DialogFlow: GetMarvelCard - Metatags are null for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "DialogFlow: GetMarvelCard - Error during search request for {SearchTerm}.", searchTerm);
+                _logger.LogError(ex, "DialogFlow: GetMarvelCard - Error during search request for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
             }
 
             var messages = new RepeatedField<Intent.Types.Message>
@@ -162,11 +167,11 @@ namespace StanLeeBot.Web.Areas.API
             return messages;
         }
 
-        private async Task<RepeatedField<Intent.Types.Message>> GetDcComicsCard(string searchTerm)
+        private async Task<RepeatedField<Intent.Types.Message>> GetDcComicsCard(string searchTerm, string sessionId)
         {
-            _logger.LogInformation("DialogFlow: GetDcComicsCard - Received request to search for {SearchTerm}", searchTerm);
+            _logger.LogInformation("DialogFlow: GetDcComicsCard - Received request to search for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
-            var backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/DCCard.png";
+            const string backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/DCCard.png";
 
             var dcCard = new Intent.Types.Message.Types.Card
             {
@@ -184,7 +189,7 @@ namespace StanLeeBot.Web.Areas.API
 
                 if (gsrMetaTags != null)
                 {
-                    _logger.LogDebug("DialogFlow: GetDcComicsCard - Beginning to build card for {SearchTerm}.", searchTerm);
+                    _logger.LogDebug("DialogFlow: GetDcComicsCard - Beginning to build card for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
                     var title = gsrMetaTags.OgTitle ?? searchTerm;
                     dcCard.Title = title;
@@ -200,16 +205,16 @@ namespace StanLeeBot.Web.Areas.API
                         Text = "Excelsior! Read more..."
                     });
 
-                    _logger.LogDebug("DialogFlow: GetDcComicsCard - Card built for {SearchTerm}.", searchTerm);
+                    _logger.LogDebug("DialogFlow: GetDcComicsCard - Card built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
                 else
                 {
-                    _logger.LogError("DialogFlow: GetDcComicsCard - Metatags are null for {SearchTerm}", searchTerm);
+                    _logger.LogError("DialogFlow: GetDcComicsCard - Metatags are null for {SearchTerm}.  SessionId: {SessionId}.", searchTerm, sessionId);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "DialogFlow: GetDcComicsCard - Error during search request for {SearchTerm}.", searchTerm);
+                _logger.LogError(ex, "DialogFlow: GetDcComicsCard - Error during search request for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
             }
 
             var messages = new RepeatedField<Intent.Types.Message>
