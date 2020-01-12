@@ -40,8 +40,12 @@ namespace StanLeeBot.Web.Areas.API
             var headers = Request.Headers;
             var authHeader = headers[_appSettings.DialogFlow.HeaderName].ToString();
 
+            _logger.LogDebug("DialogFlow: Received Request");
+
             if (authHeader == _appSettings.DialogFlow.HeaderValue)
             {
+                _logger.LogDebug("DialogFlow: AuthHeaders match!");
+
                 var webhookRequest = JsonConvert.DeserializeObject<WebhookRequest>(requestBody);
                 _logger.LogInformation("DialogFlow: Received WebHookRequest: {WebHookRequest}", webhookRequest);
 
@@ -68,6 +72,12 @@ namespace StanLeeBot.Web.Areas.API
                 return new OkObjectResult(webHookResponse);
             }
 
+            if(authHeader.IsNullOrWhiteSpace())
+                _logger.LogError("DialogFlow: Request header is absent.");
+            else
+            {
+                _logger.LogError("DialogFlow: Request header do not match.");
+            }
             return new UnauthorizedResult();
         }
 
