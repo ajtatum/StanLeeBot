@@ -7,6 +7,9 @@ namespace StanLeeBot.Web.Models.DialogFlow.Payloads
 {
     public class FacebookPayloadSettings
     {
+        [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
+        public string Text { get; set; }
+
         [JsonProperty("attachment", NullValueHandling = NullValueHandling.Ignore)]
         public FacebookAttachment Attachment { get; set; }
     }
