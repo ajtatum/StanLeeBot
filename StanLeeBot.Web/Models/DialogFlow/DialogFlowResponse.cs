@@ -53,37 +53,37 @@ namespace StanLeeBot.Web.Models.DialogFlow
 
     public class ResponseCard
     {
-        [JsonProperty("title")]
+        [JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)]
         public string Title { get; set; }
 
-        [JsonProperty("subtitle")]
+        [JsonProperty("subtitle", NullValueHandling = NullValueHandling.Ignore)]
         public string Subtitle { get; set; }
 
-        [JsonProperty("imageUri")]
-        public Uri ImageUri { get; set; }
+        [JsonProperty("imageUri", NullValueHandling = NullValueHandling.Ignore)]
+        public string ImageUri { get; set; }
 
-        [JsonProperty("buttons")]
+        [JsonProperty("buttons", NullValueHandling = NullValueHandling.Ignore)]
         public List<ResponseButton> Buttons { get; set; }
     }
 
     public class ResponseButton
     {
-        [JsonProperty("text")]
+        [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
         public string Text { get; set; }
 
-        [JsonProperty("postback")]
-        public Uri PostBack { get; set; }
+        [JsonProperty("postback", NullValueHandling = NullValueHandling.Ignore)]
+        public string PostBack { get; set; }
     }
 
     public class ResponseOutputContext
     {
-        [JsonProperty("name")]
+        [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
         public string Name { get; set; }
 
-        [JsonProperty("lifespanCount")]
+        [JsonProperty("lifespanCount", NullValueHandling = NullValueHandling.Ignore)]
         public long LifespanCount { get; set; }
 
-        [JsonProperty("parameters")]
+        [JsonProperty("parameters", NullValueHandling = NullValueHandling.Ignore)]
         public ResponseParameters Parameters { get; set; }
     }
 
