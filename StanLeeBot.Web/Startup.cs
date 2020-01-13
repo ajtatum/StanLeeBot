@@ -7,6 +7,7 @@ using Microsoft.Azure.Storage.Blob;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Services;
 using StanLeeBot.Web.Services.Interfaces;
@@ -34,8 +35,18 @@ namespace StanLeeBot.Web
                 .PersistKeysToAzureBlobStorage(container, $"{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")}/dataprotectionkeys.xml")
                 .ProtectKeysWithAzureKeyVault(Configuration["Azure:KeyVault:EncryptionKey"], Configuration["Azure:KeyVault:ClientId"], Configuration["Azure:KeyVault:ClientSecret"]);
 
-            services.AddMvc();
+            services.AddMvc()
+                .AddNewtonsoftJson(x =>
+                {
+                    x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                    x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                });
             services.AddRazorPages()
+                .AddNewtonsoftJson(x =>
+                {
+                    x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                    x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                })
                 .AddRazorRuntimeCompilation();
 
             services.Configure<AppSettings>(Configuration);
