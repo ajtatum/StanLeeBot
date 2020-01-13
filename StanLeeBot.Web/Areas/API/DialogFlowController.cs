@@ -61,33 +61,46 @@ namespace StanLeeBot.Web.Areas.API
                 if (authHeader == _appSettings.DialogFlow.HeaderValue)
                 {
                     _logger.LogDebug("DialogFlow: Request header matches!");
-                    
-                    var webhookRequest = JsonConvert.DeserializeObject<WebhookRequest>(requestBody);
-                    _logger.LogInformation("DialogFlow: Received WebHookRequest: {WebHookRequest}", webhookRequest);
 
-                    sessionId = webhookRequest.Session;
+                    var webHookRequest = JsonConvert.DeserializeObject<WebhookRequest>(requestBody);
+                    _logger.LogInformation("DialogFlow: Received WebHookRequest: {WebHookRequest}", webHookRequest);
+
+                    sessionId = webHookRequest.Session;
                     sessionId = sessionId.Substring(sessionId.LastIndexOf("/", StringComparison.Ordinal) + 1);
 
-                    intentName = webhookRequest.QueryResult.Intent.Name;
+                    intentName = webHookRequest.QueryResult.Intent.Name;
                     intentName = intentName.Substring(intentName.LastIndexOf("/", StringComparison.Ordinal) + 1);
 
-                    var queryText = webhookRequest.QueryResult.QueryText;
+                    var queryText = webHookRequest.QueryResult.QueryText;
 
                     _logger.LogInformation("DialogFlow: Processing request for intent {Intent} and queryText {QueryText}. SessionId: {SessionId}.", intentName, queryText, sessionId);
 
                     var webHookResponse = new DialogFlowResponse();
-                    
-                    //TODO: I want to provide a default FulfillmentMessage for DialogFlow to show a response. So, lets get the GCS first and pass it into a payload method and a fulfillment message method.
+
                     switch (intentName)
                     {
                         case Constants.DialogFlow.HelloMarvelLookupId:
                             _logger.LogDebug("DialogFlow: Beginning to request Marvel Lookup. SessionId: {SessionId}.", sessionId);
-                            //webHookResponse.FulfillmentMessages.Add(await GetMarvelCard(queryText, sessionId));
-                            webHookResponse.Payload = await GetMarvelPayload(queryText, sessionId);
+
+                            var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
+                            var marvelGsr = await _googleCustomSearch.GetResponse(queryText, marvelGoogleCx);
+                            
+                            var (fulFillmentText, fullFillmentMessage, payLoad) = GetMarvelBuilder(marvelGsr, queryText, sessionId);
+
+                            webHookResponse.FulfillmentText = fulFillmentText;
+                            webHookResponse.FulfillmentMessages = new List<ResponseFulfillmentMessage>
+                            {
+                                fullFillmentMessage
+                            };
+                            webHookResponse.Payload = payLoad;
                             break;
                         case Constants.DialogFlow.HelloDCLookupId:
                             _logger.LogDebug("DialogFlow: Beginning to request DC Comics Lookup. SessionId: {SessionId}.", sessionId);
-                            webHookResponse.Payload = await GetDCComicsPayload(queryText, sessionId);
+
+                            var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
+                            var dcGsr = await _googleCustomSearch.GetResponse(queryText, dcComicsCx);
+
+                            webHookResponse.Payload = GetDcComicsPayload(dcGsr, queryText, sessionId);
                             break;
                         default:
                             _logger.LogWarning("DialogFlow: Unhandled intent: {IntentName}. SessionId: {SessionId}.", intentName, sessionId);
@@ -116,20 +129,13 @@ namespace StanLeeBot.Web.Areas.API
             return new UnauthorizedResult();
         }
 
-        private async Task<PayloadBuilder> GetMarvelPayload(string searchTerm, string sessionId)
+        private (string, ResponseFulfillmentMessage, PayloadBuilder) GetMarvelBuilder(GoogleSearchResponse gsr, string searchTerm, string sessionId)
         {
-            _logger.LogInformation("DialogFlow: GetMarvelPayload - Received request to search for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+            _logger.LogInformation("DialogFlow: GetMarvelBuilder - Received request to search for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
             const string backupImage = "https://stanleebot.com/images/DialogFlow/MarvelCard.png";
 
-            var errorGoogleItem = new GoogleItem()
-            {
-                SimpleResponse = new GoogleSimpleResponse()
-                {
-                    TextToSpeech = $"Couldn't find anything for {searchTerm}"
-                }
-            };
-
+            //Set Defaults
             var payloadBuilder = new PayloadBuilder
             {
                 Google = new GooglePayloadSettings
@@ -138,139 +144,187 @@ namespace StanLeeBot.Web.Areas.API
                     RichResponse = new GoogleRichResponse()
                     {
                         Items = new List<GoogleItem>()
+                        {
+                            new GoogleItem()
+                            {
+                                SimpleResponse = new GoogleSimpleResponse()
+                                {
+                                    TextToSpeech = $"Couldn't find anything for {searchTerm}"
+                                }
+                            }
+                        }
                     }
                 },
                 Facebook = new FacebookPayloadSettings()
                 {
-                    Attachment = new FacebookAttachment()
-                    {
-                        Type = "template",
-                        Payload = new FacebookPayload()
-                        {
-                            TemplateType = "generic",
-                            ImageAspectRatio = "horizontal",
-                            Elements = new List<FacebookElement>()
-                        }
-                    }
+                    Text = $"Couldn't find anything for {searchTerm}",
                 }
             };
 
-            payloadBuilder.Google.RichResponse.Items.Add(errorGoogleItem);
+            var responseFulfillmentMessage = new ResponseFulfillmentMessage
+            {
+                Card = new ResponseCard()
+                {
+                    Title = "Sorry", 
+                    Subtitle = $"Couldn't find anything for {searchTerm}", 
+                    ImageUri = backupImage, 
+                    Buttons = new List<ResponseButton>()
+                }
+            };
+
+            var responseFulFillmentText = $"Couldn't find anything for {searchTerm}";
 
             try
             {
-                var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
-                var gsr = await _googleCustomSearch.GetResponse(searchTerm, marvelGoogleCx);
-
-                var gsrMetaTags = gsr?.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0);
-
-                if (gsrMetaTags != null)
+                if (gsr.Items != null)
                 {
-                    _logger.LogDebug("DialogFlow: GetMarvelPayload - Beginning to build card for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                    var firstGsrItem = gsr.Items.ElementAt(0);
+                    var gsrMetaTags = firstGsrItem.PageMap.MetaTags.ElementAtOrDefault(0);
 
-                    var facebookElement = new FacebookElement
+                    if (gsrMetaTags != null)
                     {
-                        Buttons = new List<FacebookButton>()
-                    };
+                        _logger.LogDebug("DialogFlow: GetMarvelBuilder - Beginning to build payload for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
-                    var title = gsr.Items.ElementAtOrDefault(0)?.Title.Split("|").ElementAtOrDefault(0)?.Trim() ?? searchTerm;
-                    facebookElement.Title = title;
-
-                    var bio = (!gsrMetaTags.OgDescription.IsNullOrWhiteSpace() ? gsrMetaTags.OgDescription : gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString()) ?? "Description unavailable at this time.";
-                    facebookElement.Subtitle = bio;
-
-                    var imageUrl = gsr.Items.ElementAtOrDefault(0)?.PageMap.CseImage.ElementAtOrDefault(0)?.Src ?? backupImage;
-                    facebookElement.ImageUrl = imageUrl;
-
-                    var webSite = (!gsrMetaTags.OgUrl.IsNullOrWhiteSpace() ? gsrMetaTags.OgUrl : gsr.Items.ElementAtOrDefault(0)?.Link.ToNullIfEmpty()) ?? string.Empty;
-
-                    facebookElement.DefaultAction = new FacebookDefaultAction()
-                    {
-                        Type = "web_url",
-                        Url = webSite,
-                        WebViewHeightRatio = "full"
-                    };
-
-                    facebookElement.Buttons.Add(new FacebookButton()
-                    {
-                        Title = "Excelsior! Read more...",
-                        Type = "web_url",
-                        Url = webSite
-                    });
-
-                    payloadBuilder.Google.RichResponse.Items.Clear();
-                    var successGoogleItem = new GoogleItem()
-                    {
-                        SimpleResponse = new GoogleSimpleResponse()
+                        var defaultResponseCard = new ResponseCard()
                         {
-                            TextToSpeech = $"Excelsior! I found {title}! {bio}",
-                            DisplayText = $"Excelsior! I found {title}! {bio}."
-                        }
-                    };
+                            Buttons = new List<ResponseButton>()
+                        };
 
-                    var successGoogleCard = new GoogleItem()
-                    {
-                        BasicCard = new GoogleBasicCard()
+                        var facebookElement = new FacebookElement
                         {
-                            Title = $"Excelsior! I found {title}!",
-                            Subtitle = "From Marvel.com...",
-                            FormattedText = bio,
-                            Image = new GoogleImage()
+                            Buttons = new List<FacebookButton>()
+                        };
+
+                        var title = CleanTitle(gsrMetaTags.OgTitle) ?? CleanTitle(firstGsrItem?.Title) ?? searchTerm;
+                        facebookElement.Title = title;
+                        defaultResponseCard.Title = title;
+
+                        var bio = (!gsrMetaTags.OgDescription.IsNullOrWhiteSpace() ? gsrMetaTags.OgDescription : firstGsrItem?.Snippet.CleanString()) ?? "Description unavailable at this time.";
+                        facebookElement.Subtitle = bio;
+                        defaultResponseCard.Subtitle = bio;
+
+                        var imageUrl = firstGsrItem?.PageMap.CseImage.ElementAtOrDefault(0)?.Src ?? backupImage;
+                        facebookElement.ImageUrl = imageUrl;
+                        defaultResponseCard.ImageUri = imageUrl;
+
+                        var webSite = (!gsrMetaTags.OgUrl.IsNullOrWhiteSpace() ? gsrMetaTags.OgUrl : firstGsrItem?.Link.ToNullIfEmpty()) ?? "https://www.marvel.com/";
+
+                        facebookElement.DefaultAction = new FacebookDefaultAction()
+                        {
+                            Type = "web_url",
+                            Url = webSite,
+                            WebViewHeightRatio = "full"
+                        };
+
+                        facebookElement.Buttons.Add(new FacebookButton()
+                        {
+                            Title = "Excelsior! Read more...",
+                            Type = "web_url",
+                            Url = webSite
+                        });
+
+                        defaultResponseCard.Buttons.Add(new ResponseButton()
+                        {
+                            PostBack = webSite,
+                            Text = "Excelsior! Read more..."
+                        });
+
+                        var textResponse = $"Excelsior! I found {title}! {bio}";
+
+                        var successGoogleItem = new GoogleItem()
+                        {
+                            SimpleResponse = new GoogleSimpleResponse()
                             {
-                                Url = imageUrl,
-                                AccessibilityText = title
-                            },
-                            ImageDisplayOptions = "DEFAULT",
-                            Buttons = new List<GoogleButton>()
+                                TextToSpeech = textResponse,
+                                DisplayText = textResponse
+                            }
+                        };
+
+                        var successGoogleCard = new GoogleItem()
+                        {
+                            BasicCard = new GoogleBasicCard()
                             {
-                                new GoogleButton()
+                                Title = $"Excelsior! I found {title}!",
+                                Subtitle = "From Marvel.com...",
+                                FormattedText = bio,
+                                Image = new GoogleImage()
                                 {
-                                    Title = "Read more",
-                                    OpenUrlAction = new GoogleOpenUrlAction()
+                                    Url = imageUrl,
+                                    AccessibilityText = title
+                                },
+                                ImageDisplayOptions = "DEFAULT",
+                                Buttons = new List<GoogleButton>()
+                                {
+                                    new GoogleButton()
                                     {
-                                        Url = webSite
+                                        Title = "Read more",
+                                        OpenUrlAction = new GoogleOpenUrlAction()
+                                        {
+                                            Url = webSite
+                                        }
                                     }
                                 }
                             }
-                        }
-                    };
+                        };
 
-                    payloadBuilder.Google.RichResponse.Items.Add(successGoogleItem);
-                    payloadBuilder.Google.RichResponse.Items.Add(successGoogleCard);
+                        payloadBuilder.Google.RichResponse.Items.Clear();
+                        payloadBuilder.Google.RichResponse.Items.Add(successGoogleItem);
+                        payloadBuilder.Google.RichResponse.Items.Add(successGoogleCard);
 
-                    payloadBuilder.Facebook.Attachment.Payload.Elements.Add(facebookElement);
+                        payloadBuilder.Facebook.Text = null;
+                        payloadBuilder.Facebook.Attachment = new FacebookAttachment()
+                        {
+                            Type = "template",
+                            Payload = new FacebookPayload()
+                            {
+                                TemplateType = "generic",
+                                ImageAspectRatio = "horizontal",
+                                Elements = new List<FacebookElement>()
+                            }
+                        };
 
-                    _logger.LogDebug("DialogFlow: GetMarvelPayload - Card built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                        payloadBuilder.Facebook.Attachment.Payload.Elements.Add(facebookElement);
+
+                        responseFulFillmentText = textResponse;
+                        responseFulfillmentMessage.Card = defaultResponseCard;
+
+                        _logger.LogDebug("DialogFlow: GetMarvelBuilder - Payload built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+
+                        _logger.LogDebug("DialogFlow: GetMarvelBuilder - PayloadBuilder: {@PayloadBuilder}. SessionId: {SessionId}.", payloadBuilder, sessionId);
+                        return (responseFulFillmentText, responseFulfillmentMessage, payloadBuilder);
+                    }
+
+                    _logger.LogError("DialogFlow: GetMarvelBuilder - Metatags are null for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
                 else
                 {
-                    _logger.LogError("DialogFlow: GetMarvelPayload - Metatags are null for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                    _logger.LogError("DialogFlow: GetMarvelBuilder - There are no items for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "DialogFlow: GetMarvelPayload - Error during search request for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                _logger.LogError(ex, "DialogFlow: GetMarvelBuilder - Error during search request for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
             }
 
-            _logger.LogDebug("DialogFlow: GetMarvelPayload - PayloadBuilder: {@PayloadBuilder}. SessionId: {SessionId}.", payloadBuilder, sessionId);
+            _logger.LogDebug("DialogFlow: GetMarvelBuilder - Default PayloadBuilder: {@PayloadBuilder}. SessionId: {SessionId}.", payloadBuilder, sessionId);
 
-            return payloadBuilder;
+            return (responseFulFillmentText, responseFulfillmentMessage, payloadBuilder);
+
+            static string CleanTitle(string title)
+            {
+                return title.IsNullOrWhiteSpace()
+                    ? null
+                    : title.Remove(title.IndexOf('|')).Trim().ToNullIfEmpty();
+            }
         }
 
-        private async Task<PayloadBuilder> GetDCComicsPayload(string searchTerm, string sessionId)
+        private PayloadBuilder GetDcComicsPayload(GoogleSearchResponse gsr, string searchTerm, string sessionId)
         {
             _logger.LogInformation("DialogFlow: GetDCComicsPayload - Received request to search for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
             const string backupImage = "https://stanleebot.com/images/DialogFlow/DCCard.png";
 
-            var errorGoogleItem = new GoogleItem()
-            {
-                SimpleResponse = new GoogleSimpleResponse()
-                {
-                    TextToSpeech = $"Couldn't find anything for {searchTerm}"
-                }
-            };
-
+            //Set Defaults
             var payloadBuilder = new PayloadBuilder
             {
                 Google = new GooglePayloadSettings
@@ -279,114 +333,130 @@ namespace StanLeeBot.Web.Areas.API
                     RichResponse = new GoogleRichResponse()
                     {
                         Items = new List<GoogleItem>()
+                        {
+                            new GoogleItem()
+                            {
+                                SimpleResponse = new GoogleSimpleResponse()
+                                {
+                                    TextToSpeech = $"Couldn't find anything for {searchTerm}"
+                                }
+                            }
+                        }
                     }
                 },
                 Facebook = new FacebookPayloadSettings()
                 {
-                    Attachment = new FacebookAttachment()
-                    {
-                        Type = "template",
-                        Payload = new FacebookPayload()
-                        {
-                            TemplateType = "generic",
-                            ImageAspectRatio = "horizontal",
-                            Elements = new List<FacebookElement>()
-                        }
-                    }
+                    Text = $"Couldn't find anything for {searchTerm}",
                 }
             };
 
-            payloadBuilder.Google.RichResponse.Items.Add(errorGoogleItem);
-
             try
             {
-                var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
-                var gsr = await _googleCustomSearch.GetResponse(searchTerm, dcComicsCx);
-
-                var gsrMetaTags = gsr?.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0);
-
-                if (gsrMetaTags != null)
+                if (gsr.Items != null)
                 {
-                    _logger.LogDebug("DialogFlow: GetDCComicsPayload - Beginning to build card for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                    var firstGsrItem = gsr.Items.ElementAt(0);
+                    var gsrMetaTags = firstGsrItem.PageMap.MetaTags.ElementAtOrDefault(0);
 
-                    var facebookElement = new FacebookElement
+                    if (gsrMetaTags != null)
                     {
-                        Buttons = new List<FacebookButton>()
-                    };
+                        _logger.LogDebug("DialogFlow: GetDCComicsPayload - Beginning to build payload for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
-                    var title = gsrMetaTags.OgTitle ?? searchTerm;
-                    facebookElement.Title = title;
-
-                    var bio = (!gsrMetaTags.OgDescription.IsNullOrWhiteSpace() ? gsrMetaTags.OgDescription : gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString()) ?? "Description unavailable at this time.";
-                    facebookElement.Subtitle = bio;
-
-                    var imageUrl = gsr.Items.ElementAtOrDefault(0)?.PageMap.CseThumbnail.ElementAtOrDefault(0)?.Src ?? backupImage;
-                    facebookElement.ImageUrl = imageUrl;
-
-                    var webSite = (!gsrMetaTags.OgUrl.IsNullOrWhiteSpace() ? gsrMetaTags.OgUrl : gsr.Items.ElementAtOrDefault(0)?.Link.ToNullIfEmpty()) ?? string.Empty;
-
-                    facebookElement.DefaultAction = new FacebookDefaultAction()
-                    {
-                        Type = "web_url",
-                        Url = webSite,
-                        WebViewHeightRatio = "tall"
-                    };
-
-                    facebookElement.Buttons.Add(new FacebookButton()
-                    {
-                        Title = "Excelsior! Read more...",
-                        Type = "web_url",
-                        Url = webSite,
-                        WebViewHeightRatio = "tall"
-                    });
-
-                    payloadBuilder.Google.RichResponse.Items.Clear();
-                    var successGoogleItem = new GoogleItem()
-                    {
-                        SimpleResponse = new GoogleSimpleResponse()
+                        var facebookElement = new FacebookElement
                         {
-                            TextToSpeech = $"Excelsior! I found {title}! {bio}",
-                            DisplayText = $"Excelsior! I found {title}! {bio}."
-                        }
-                    };
+                            Buttons = new List<FacebookButton>()
+                        };
 
-                    var successGoogleCard = new GoogleItem()
-                    {
-                        BasicCard = new GoogleBasicCard()
+                        var title = gsrMetaTags.OgTitle ?? searchTerm;
+                        facebookElement.Title = title;
+
+                        var bio = (!gsrMetaTags.OgDescription.IsNullOrWhiteSpace() ? gsrMetaTags.OgDescription : firstGsrItem?.Snippet.CleanString()) ?? "Description unavailable at this time.";
+                        facebookElement.Subtitle = bio;
+
+                        var imageUrl = firstGsrItem?.PageMap.CseImage.ElementAtOrDefault(0)?.Src ?? backupImage;
+                        facebookElement.ImageUrl = imageUrl;
+
+                        var webSite = (!gsrMetaTags.OgUrl.IsNullOrWhiteSpace() ? gsrMetaTags.OgUrl : firstGsrItem?.Link.ToNullIfEmpty()) ?? "https://www.dccomics.com/";
+
+                        facebookElement.DefaultAction = new FacebookDefaultAction()
                         {
-                            Title = $"Excelsior! I found {title}!",
-                            Subtitle = "From DCComics.com...",
-                            FormattedText = bio,
-                            Image = new GoogleImage()
+                            Type = "web_url",
+                            Url = webSite,
+                            WebViewHeightRatio = "tall"
+                        };
+
+                        facebookElement.Buttons.Add(new FacebookButton()
+                        {
+                            Title = "Excelsior! Read more...",
+                            Type = "web_url",
+                            Url = webSite,
+                            WebViewHeightRatio = "tall"
+                        });
+
+                        var successGoogleItem = new GoogleItem()
+                        {
+                            SimpleResponse = new GoogleSimpleResponse()
                             {
-                                Url = imageUrl,
-                                AccessibilityText = title
-                            },
-                            ImageDisplayOptions = "DEFAULT",
-                            Buttons = new List<GoogleButton>()
+                                TextToSpeech = $"Excelsior! I found {title}! {bio}",
+                                DisplayText = $"Excelsior! I found {title}! {bio}."
+                            }
+                        };
+
+                        var successGoogleCard = new GoogleItem()
+                        {
+                            BasicCard = new GoogleBasicCard()
                             {
-                                new GoogleButton()
+                                Title = $"Excelsior! I found {title}!",
+                                Subtitle = "From DCComics.com...",
+                                FormattedText = bio,
+                                Image = new GoogleImage()
                                 {
-                                    Title = "Read more",
-                                    OpenUrlAction = new GoogleOpenUrlAction()
+                                    Url = imageUrl,
+                                    AccessibilityText = title
+                                },
+                                ImageDisplayOptions = "DEFAULT",
+                                Buttons = new List<GoogleButton>()
+                                {
+                                    new GoogleButton()
                                     {
-                                        Url = webSite
+                                        Title = "Read more",
+                                        OpenUrlAction = new GoogleOpenUrlAction()
+                                        {
+                                            Url = webSite
+                                        }
                                     }
                                 }
                             }
-                        }
-                    };
+                        };
 
-                    payloadBuilder.Google.RichResponse.Items.Add(successGoogleItem);
-                    payloadBuilder.Google.RichResponse.Items.Add(successGoogleCard);
+                        payloadBuilder.Google.RichResponse.Items.Clear();
+                        payloadBuilder.Google.RichResponse.Items.Add(successGoogleItem);
+                        payloadBuilder.Google.RichResponse.Items.Add(successGoogleCard);
 
-                    payloadBuilder.Facebook.Attachment.Payload.Elements.Add(facebookElement);
+                        payloadBuilder.Facebook.Text = null;
+                        payloadBuilder.Facebook.Attachment = new FacebookAttachment()
+                        {
+                            Type = "template",
+                            Payload = new FacebookPayload()
+                            {
+                                TemplateType = "generic",
+                                ImageAspectRatio = "horizontal",
+                                Elements = new List<FacebookElement>()
+                            }
+                        };
 
-                    _logger.LogDebug("DialogFlow: GetDCComicsPayload - Card built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                        payloadBuilder.Facebook.Attachment.Payload.Elements.Add(facebookElement);
+
+                        _logger.LogDebug("DialogFlow: GetDCComicsPayload - Payload built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+
+                        _logger.LogDebug("DialogFlow: GetDCComicsPayload - PayloadBuilder: {@PayloadBuilder}. SessionId: {SessionId}.", payloadBuilder, sessionId);
+                        return payloadBuilder;
+                    }
+
+                    _logger.LogError("DialogFlow: GetDCComicsPayload - Metatags are null for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
                 else
                 {
-                    _logger.LogError("DialogFlow: GetDCComicsPayload - Metatags are null for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
+                    _logger.LogError("DialogFlow: GetDCComicsPayload - There are no items for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
             }
             catch (Exception ex)
@@ -394,23 +464,20 @@ namespace StanLeeBot.Web.Areas.API
                 _logger.LogError(ex, "DialogFlow: GetDCComicsPayload - Error during search request for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
             }
 
-            _logger.LogDebug("DialogFlow: GetDCComicsPayload - PayloadBuilder: {@PayloadBuilder}. SessionId: {SessionId}.", payloadBuilder, sessionId);
+            _logger.LogDebug("DialogFlow: GetDCComicsPayload - Default PayloadBuilder: {@PayloadBuilder}. SessionId: {SessionId}.", payloadBuilder, sessionId);
 
             return payloadBuilder;
         }
 
-        private async Task<RepeatedField<Intent.Types.Message>> GetMarvelCard(string searchTerm, string sessionId)
+        private ResponseFulfillmentMessage GetMarvelCard(GoogleSearchResponse gsr, string searchTerm, string sessionId)
         {
+            var responseFulfillmentMessage = new ResponseFulfillmentMessage();
+
             _logger.LogInformation("DialogFlow: GetMarvelCard - Received request to search for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
             const string backupImage = "https://stanleebot.com/images/DialogFlow/Messenger/MarvelCard.png";
 
-            var simpleResponse = new Intent.Types.Message.Types.SimpleResponse
-            {
-                TextToSpeech = $"Couldn't find anything for {searchTerm}"
-            };
-
-            var card = new Intent.Types.Message.Types.Card
+            var card = new ResponseCard()
             {
                 Title = "Sorry",
                 Subtitle = $"Couldn't find anything for {searchTerm}",
@@ -419,9 +486,6 @@ namespace StanLeeBot.Web.Areas.API
 
             try
             {
-                var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
-                var gsr = await _googleCustomSearch.GetResponse(searchTerm, marvelGoogleCx);
-
                 var gsrMetaTags = gsr?.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0);
 
                 if (gsrMetaTags != null)
@@ -436,13 +500,14 @@ namespace StanLeeBot.Web.Areas.API
 
                     card.ImageUri = gsr.Items.ElementAtOrDefault(0)?.PageMap.CseImage.ElementAtOrDefault(0)?.Src ?? backupImage;
 
-                    card.Buttons.Add(new Intent.Types.Message.Types.Card.Types.Button()
+                    card.Buttons = new List<ResponseButton>
                     {
-                        Postback = gsrMetaTags.OgUrl,
-                        Text = "Excelsior! Read more..."
-                    });
-
-                    simpleResponse.TextToSpeech = $"Excelsior! I found {title}! {bio}";
+                        new ResponseButton()
+                        {
+                            PostBack = gsrMetaTags.OgUrl, 
+                            Text = "Excelsior! Read more..."
+                        }
+                    };
 
                     _logger.LogDebug("DialogFlow: GetMarvelCard - Card built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
                 }
@@ -456,23 +521,9 @@ namespace StanLeeBot.Web.Areas.API
                 _logger.LogError(ex, "DialogFlow: GetMarvelCard - Error during search request for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
             }
 
-            var simpleResponses = new Intent.Types.Message.Types.SimpleResponses();
-            simpleResponses.SimpleResponses_.Add(simpleResponse);
+            responseFulfillmentMessage.Card = card;
 
-            var messages = new RepeatedField<Intent.Types.Message>
-            {
-                new Intent.Types.Message()
-                {
-                    Card = card,
-                    SimpleResponses = simpleResponses
-                },
-                new Intent.Types.Message()
-                {
-                    SimpleResponses = simpleResponses
-                }
-            };
-
-            return messages;
+            return responseFulfillmentMessage;
         }
 
         private async Task<RepeatedField<Intent.Types.Message>> GetDcComicsCard(string searchTerm, string sessionId)
