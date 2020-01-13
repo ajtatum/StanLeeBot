@@ -39,13 +39,13 @@ namespace StanLeeBot.Web
                 .AddNewtonsoftJson(x =>
                 {
                     x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                    x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                    //x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 });
             services.AddRazorPages()
                 .AddNewtonsoftJson(x =>
                 {
                     x.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-                    x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                    //x.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 })
                 .AddRazorRuntimeCompilation();
 
