@@ -151,7 +151,7 @@ namespace StanLeeBot.Web.Areas.API
 
             var responseFulfillmentText = $"Couldn't find anything for {searchTerm}";
 
-            var payloadBuilder = BuildDefaultPayLoad(searchTerm);
+            var payloadBuilder = BuildDefaultSearchPayLoad(searchTerm);
             #endregion
 
             try
@@ -191,8 +191,8 @@ namespace StanLeeBot.Web.Areas.API
                         responseFulfillmentText = $"Excelsior! I found {title}! {bio}";
                         responseFulfillmentMessage.Card = responseCard;
 
-                        payloadBuilder.Google = BuildGooglePayload(title, bio, imageUrl, webSite);
-                        payloadBuilder.Facebook = BuildFacebookPayload(title, bio, imageUrl, webSite, FacebookImageAspectRatio.Horizontal, FacebookWebViewHeightRatio.Full);
+                        payloadBuilder.Google = BuildGoogleSearchPayload(title, bio, imageUrl, webSite);
+                        payloadBuilder.Facebook = BuildFacebookSearchPayload(title, bio, imageUrl, webSite, FacebookImageAspectRatio.Horizontal, FacebookWebViewHeightRatio.Full);
 
                         _logger.LogInformation("DialogFlow: GetMarvelBuilder - Payload built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
@@ -244,7 +244,7 @@ namespace StanLeeBot.Web.Areas.API
 
             var responseFulfillmentText = $"Couldn't find anything for {searchTerm}";
 
-            var payloadBuilder = BuildDefaultPayLoad(searchTerm);
+            var payloadBuilder = BuildDefaultSearchPayLoad(searchTerm);
             #endregion
 
             try
@@ -284,8 +284,8 @@ namespace StanLeeBot.Web.Areas.API
                         responseFulfillmentText = $"Excelsior! I found {title}! {bio}";
                         responseFulfillmentMessage.Card = responseCard;
 
-                        payloadBuilder.Google = BuildGooglePayload(title, bio, imageUrl, webSite);
-                        payloadBuilder.Facebook = BuildFacebookPayload(title, bio, imageUrl, webSite, FacebookImageAspectRatio.Square, FacebookWebViewHeightRatio.Tall);
+                        payloadBuilder.Google = BuildGoogleSearchPayload(title, bio, imageUrl, webSite);
+                        payloadBuilder.Facebook = BuildFacebookSearchPayload(title, bio, imageUrl, webSite, FacebookImageAspectRatio.Square, FacebookWebViewHeightRatio.Tall);
 
                         _logger.LogInformation("DialogFlow: GetDcComicsBuilder - Payload built for {SearchTerm}. SessionId: {SessionId}.", searchTerm, sessionId);
 
@@ -310,7 +310,7 @@ namespace StanLeeBot.Web.Areas.API
             return (responseFulfillmentText, responseFulfillmentMessage, payloadBuilder);
         }
 
-        private static PayloadBuilder BuildDefaultPayLoad(string searchTerm)
+        private static PayloadBuilder BuildDefaultSearchPayLoad(string searchTerm)
         {
             var payloadBuilder = new PayloadBuilder()
             {
@@ -340,7 +340,7 @@ namespace StanLeeBot.Web.Areas.API
             return payloadBuilder;
         }
 
-        private static GooglePayloadSettings BuildGooglePayload(string title, string bio, string imageUrl, string webSite)
+        private static GooglePayloadSettings BuildGoogleSearchPayload(string title, string bio, string imageUrl, string webSite)
         {
             var payload = new GooglePayloadSettings()
             {
@@ -390,7 +390,7 @@ namespace StanLeeBot.Web.Areas.API
             return payload;
         }
 
-        private static FacebookPayloadSettings BuildFacebookPayload(string title, string bio, string imageUrl, string webSite, FacebookImageAspectRatio imageAspectRatio, FacebookWebViewHeightRatio viewHeightRatio)
+        private static FacebookPayloadSettings BuildFacebookSearchPayload(string title, string bio, string imageUrl, string webSite, FacebookImageAspectRatio imageAspectRatio, FacebookWebViewHeightRatio viewHeightRatio)
         {
             var payLoad = new FacebookPayloadSettings
             {
