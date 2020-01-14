@@ -220,7 +220,7 @@ namespace StanLeeBot.Web.Areas.API
             {
                 return title.IsNullOrWhiteSpace()
                     ? null
-                    : title.Remove(title.IndexOf('|')).Trim().ToNullIfWhiteSpace();
+                    : title.Split('|').ElementAtOrDefault(0)?.Trim().ToNullIfWhiteSpace();
             }
         }
 
