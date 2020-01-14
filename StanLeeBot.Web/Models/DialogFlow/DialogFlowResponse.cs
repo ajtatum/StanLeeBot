@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Google.Cloud.Dialogflow.V2;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using StanLeeBot.Web.Models.DialogFlow.Payloads;
 
@@ -85,20 +83,5 @@ namespace StanLeeBot.Web.Models.DialogFlow
 
         [JsonProperty("parameters", NullValueHandling = NullValueHandling.Ignore)]
         public ResponseParameters Parameters { get; set; }
-    }
-
-    public class ResponsePayload
-    {
-        [JsonProperty("google", NullValueHandling = NullValueHandling.Ignore)]
-        public GooglePayloadSettings Google { get; set; }
-
-        [JsonProperty("facebook", NullValueHandling = NullValueHandling.Ignore)]
-        public FacebookPayloadSettings Facebook { get; set; }
-
-        [JsonProperty("slack", NullValueHandling = NullValueHandling.Ignore)]
-        public SlackPayloadSettings Slack { get; set; }
-
-        [JsonProperty("telegram", NullValueHandling = NullValueHandling.Ignore)]
-        public TelegramPayloadSettings Telegram { get; set; }
     }
 }

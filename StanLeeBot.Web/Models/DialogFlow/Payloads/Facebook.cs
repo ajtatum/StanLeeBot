@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
@@ -120,5 +121,23 @@ namespace StanLeeBot.Web.Models.DialogFlow.Payloads
         /// </summary>
         [JsonProperty("webview_height_ratio", NullValueHandling = NullValueHandling.Ignore)]
         public string WebViewHeightRatio { get; set; }
+    }
+
+    public enum FacebookWebViewHeightRatio
+    {
+        [Description("compact")]
+        Compact,
+        [Description("tall")]
+        Tall,
+        [Description("full")]
+        Full
+    }
+
+    public enum FacebookImageAspectRatio
+    {
+        [Description("horizontal")]
+        Horizontal,
+        [Description("square")]
+        Square
     }
 }
