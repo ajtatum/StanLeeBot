@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
+using StanLeeBot.Web.Builders.Search;
+using StanLeeBot.Web.Builders.Search.Interfaces;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Services;
 using StanLeeBot.Web.Services.Interfaces;
@@ -51,8 +53,11 @@ namespace StanLeeBot.Web
 
             services.Configure<AppSettings>(Configuration);
 
+            services.AddScoped<IGoogleSearchService, GoogleSearchService>();
+            services.AddScoped<ISearchBuilder<MarvelSearchBuilder>, MarvelSearchBuilder>();
+            services.AddScoped<ISearchBuilder<DCComicsSearchBuilder>, DCComicsSearchBuilder>();
+            
             services.AddScoped<ISlackService, SlackService>();
-            services.AddScoped<IGoogleCustomSearch, GoogleCustomSearch>();
             services.AddScoped<ITelegramMessagingService, TelegramMessagingService>();
             services.AddSingleton<ITelegramBotService, TelegramBotService>();
 

@@ -36,7 +36,7 @@ namespace StanLeeBot.Web.Controllers
 
                 if (slackState != null && cookieValue != null && slackState == cookieValue)
                 {
-                    SlackAuthRequest slackAuthRequest;
+                    SlackAuthRequest.AuthRequest authRequest;
                     string responseMessage;
 
                     var requestUrl = $"https://slack.com/api/oauth.access?client_id={clientId}&client_secret={clientSecret}&code={slackCode}";
@@ -45,14 +45,14 @@ namespace StanLeeBot.Web.Controllers
                     {
                         var response = await client.SendAsync(request).ConfigureAwait(false);
                         var result = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        slackAuthRequest = JsonConvert.DeserializeObject<SlackAuthRequest>(result);
+                        authRequest = JsonConvert.DeserializeObject<SlackAuthRequest.AuthRequest>(result);
                     }
 
-                    if (slackAuthRequest != null && !slackAuthRequest.IncomingWebhook.Url.IsNullOrWhiteSpace())
+                    if (authRequest != null && !authRequest.IncomingWebhook.Url.IsNullOrWhiteSpace())
                     {
-                        _logger.LogInformation("New installation of StanLeeBot for {TeamName} in {Channel}", slackAuthRequest.TeamName, slackAuthRequest.IncomingWebhook.Channel);
+                        _logger.LogInformation("New installation of StanLeeBot for {TeamName} in {Channel}", authRequest.TeamName, authRequest.IncomingWebhook.Channel);
 
-                        var webhookUrl = slackAuthRequest.IncomingWebhook.Url;
+                        var webhookUrl = authRequest.IncomingWebhook.Url;
 
                         var sbmClient = new SbmClient(webhookUrl);
                         var message = new Message
@@ -63,7 +63,7 @@ namespace StanLeeBot.Web.Controllers
 
                         Response.Cookies.Delete(Constants.StanLeeSlackStateCookieName);
 
-                        responseMessage = $"Congrats! StanLeeBot has been successfully added to {slackAuthRequest.TeamName} {slackAuthRequest.IncomingWebhook.Channel}";
+                        responseMessage = $"Congrats! StanLeeBot has been successfully added to {authRequest.TeamName} {authRequest.IncomingWebhook.Channel}";
                         return RedirectToPage("/Index", new { message = responseMessage });
                     }
 

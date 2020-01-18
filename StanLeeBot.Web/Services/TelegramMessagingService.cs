@@ -19,15 +19,15 @@ namespace StanLeeBot.Web.Services
         private readonly ITelegramBotService _botService;
         private readonly ILogger<TelegramMessagingService> _logger;
         private readonly AppSettings _appSettings;
-        private readonly IGoogleCustomSearch _googleCustomSearch;
+        private readonly IGoogleSearchService _googleSearchService;
 
         public TelegramMessagingService(ITelegramBotService botService, ILogger<TelegramMessagingService> logger,
-                                        IOptionsMonitor<AppSettings> appSettings, IGoogleCustomSearch googleCustomSearch)
+                                        IOptionsMonitor<AppSettings> appSettings, IGoogleSearchService googleSearchService)
         {
             _botService = botService;
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
-            _googleCustomSearch = googleCustomSearch;
+            _googleSearchService = googleSearchService;
         }
 
         public async Task HandleMessage(Update update)
@@ -84,9 +84,9 @@ namespace StanLeeBot.Web.Services
         public async Task<string> GetMarvel(string lookingFor)
         {
             var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
-            var gsr = await _googleCustomSearch.GetResponse(lookingFor, marvelGoogleCx);
+            var gsr = await _googleSearchService.GetResponse(lookingFor, marvelGoogleCx);
 
-            var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
+            var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new GoogleSearchResponse.MetaTag();
 
             var messageBuilder = new StringBuilder();
             var snippet = $"Could not find anything for {lookingFor}.";
@@ -117,9 +117,9 @@ namespace StanLeeBot.Web.Services
         public async Task<string> GetDcComics(string lookingFor)
         {
             var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
-            var gsr = await _googleCustomSearch.GetResponse(lookingFor, dcComicsCx);
+            var gsr = await _googleSearchService.GetResponse(lookingFor, dcComicsCx);
 
-            var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
+            var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new GoogleSearchResponse.MetaTag();
 
             var messageBuilder = new StringBuilder();
             var snippet = $"Could not find anything for {lookingFor}.";

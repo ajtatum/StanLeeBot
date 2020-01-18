@@ -10,18 +10,18 @@ using StanLeeBot.Web.Services.Interfaces;
 
 namespace StanLeeBot.Web.Services
 {
-    public class GoogleCustomSearch : IGoogleCustomSearch
+    public class GoogleSearchService : IGoogleSearchService
     {
-        private readonly ILogger<GoogleCustomSearch> _logger;
+        private readonly ILogger<GoogleSearchService> _logger;
         private readonly AppSettings _appSettings;
 
-        public GoogleCustomSearch(ILogger<GoogleCustomSearch> logger, IOptionsMonitor<AppSettings> appSettings)
+        public GoogleSearchService(ILogger<GoogleSearchService> logger, IOptionsMonitor<AppSettings> appSettings)
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
         }
 
-        public async Task<GoogleSearchResponse> GetResponse(string search, string cse)
+        public async Task<GoogleSearchResponse.SearchResponse> GetResponse(string search, string cse)
         {
             var googleApiKey = _appSettings.GoogleCustomSearch.ApiKey;
 
@@ -37,7 +37,7 @@ namespace StanLeeBot.Web.Services
 
                 if (!result.IsNullOrWhiteSpace())
                 {
-                    var googleSearchResponse = JsonConvert.DeserializeObject<GoogleSearchResponse>(result);
+                    var googleSearchResponse = JsonConvert.DeserializeObject<GoogleSearchResponse.SearchResponse>(result);
                     return googleSearchResponse;
                 }
 

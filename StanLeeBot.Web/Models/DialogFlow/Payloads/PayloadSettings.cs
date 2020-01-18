@@ -2,18 +2,18 @@
 
 namespace StanLeeBot.Web.Models.DialogFlow.Payloads
 {
-    public class PayloadBuilder
+    public class PayloadSettings
     {
         [JsonProperty("google", NullValueHandling = NullValueHandling.Ignore)]
-        public GooglePayloadSettings Google { get; set; }
+        public GooglePayloadSettings.Payload Google { get; set; }
 
         [JsonProperty("facebook", NullValueHandling = NullValueHandling.Ignore)]
-        public FacebookPayloadSettings Facebook { get; set; }
+        public FacebookPayloadSettings.Payload Facebook { get; set; }
 
         [JsonProperty("slack", NullValueHandling = NullValueHandling.Ignore)]
-        public SlackPayloadSettings Slack { get; set; }
+        public SlackPayloadSettings.Payload Slack { get; set; }
 
         [JsonProperty("telegram", NullValueHandling = NullValueHandling.Ignore)]
-        public TelegramPayloadSettings Telegram { get; set; }
+        public TelegramPayloadSettings.Payload Telegram { get; set; }
     }
 }

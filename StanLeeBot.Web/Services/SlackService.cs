@@ -18,27 +18,27 @@ namespace StanLeeBot.Web.Services
     {
         private readonly ILogger<SlackService> _logger;
         private readonly AppSettings _appSettings;
-        private readonly IGoogleCustomSearch _googleCustomSearch;
+        private readonly IGoogleSearchService _googleSearchService;
 
-        public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings, IGoogleCustomSearch googleCustomSearch)
+        public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings, IGoogleSearchService googleSearchService)
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
-            _googleCustomSearch = googleCustomSearch;
+            _googleSearchService = googleSearchService;
         }
 
         #region SlackSlashCommands
         public async Task GetMarvel(SlackCommandRequest slackCommandRequest)
         {
             var marvelGoogleCx = _appSettings.GoogleCustomSearch.MarvelCx;
-            var gsr = await _googleCustomSearch.GetResponse(slackCommandRequest.Text, marvelGoogleCx);
+            var gsr = await _googleSearchService.GetResponse(slackCommandRequest.Text, marvelGoogleCx);
 
             if (gsr != null)
             {
                 var client = new SbmClient(slackCommandRequest.ResponseUrl);
                 var message = new Message();
 
-                var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
+                var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new GoogleSearchResponse.MetaTag();
                 
                 var snippet = gsrMetaTags.OgDescription;
                 if (snippet.IsNullOrWhiteSpace())
@@ -83,14 +83,14 @@ namespace StanLeeBot.Web.Services
         public async Task GetDcComics(SlackCommandRequest slackCommandRequest)
         {
             var dcComicsCx = _appSettings.GoogleCustomSearch.DcComicsCx;
-            var gsr = await _googleCustomSearch.GetResponse(slackCommandRequest.Text, dcComicsCx);
+            var gsr = await _googleSearchService.GetResponse(slackCommandRequest.Text, dcComicsCx);
 
             if (gsr != null)
             {
                 var client = new SbmClient(slackCommandRequest.ResponseUrl);
                 var message = new Message();
 
-                var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new MetaTag();
+                var gsrMetaTags = gsr.Items.ElementAtOrDefault(0)?.PageMap.MetaTags.ElementAtOrDefault(0) ?? new GoogleSearchResponse.MetaTag();
                 var snippet = gsr.Items.ElementAtOrDefault(0)?.Snippet.CleanString() ?? string.Empty;
                 var characterName = gsrMetaTags.OgTitle;
 
