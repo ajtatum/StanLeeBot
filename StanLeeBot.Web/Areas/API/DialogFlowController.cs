@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using BabouExtensions;
 using BabouExtensions.AspNetCore;
@@ -12,9 +11,9 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using StanLeeBot.Web.Builders.Search;
 using StanLeeBot.Web.Builders.Search.Interfaces;
+using StanLeeBot.Web.Builders.ShortenUrl.Interfaces;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Models.DialogFlow;
-using StanLeeBot.Web.Models.DialogFlow.Payloads;
 
 namespace StanLeeBot.Web.Areas.API
 {
@@ -27,14 +26,17 @@ namespace StanLeeBot.Web.Areas.API
 
         private readonly ISearchBuilder<MarvelSearchBuilder> _marvelSearchBuilder;
         private readonly ISearchBuilder<DCComicsSearchBuilder> _dcComicsSearchBuilder;
+        private readonly IShortenUrlBuilder _shortenUrlBuilder;
 
         public DialogFlowController(ILogger<DialogFlowController> logger, IOptionsMonitor<AppSettings> appSettings,
-                                    ISearchBuilder<MarvelSearchBuilder> marvelSearchBuilder, ISearchBuilder<DCComicsSearchBuilder> dcComicsSearchBuilder)
+                                    ISearchBuilder<MarvelSearchBuilder> marvelSearchBuilder, ISearchBuilder<DCComicsSearchBuilder> dcComicsSearchBuilder,
+                                    IShortenUrlBuilder shortenUrlBuilder)
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
             _marvelSearchBuilder = marvelSearchBuilder;
             _dcComicsSearchBuilder = dcComicsSearchBuilder;
+            _shortenUrlBuilder = shortenUrlBuilder;
         }
 
         [HttpGet]
@@ -81,7 +83,7 @@ namespace StanLeeBot.Web.Areas.API
 
                     switch (intentName)
                     {
-                        case Constants.DialogFlow.HelloMarvelLookupId:
+                        case Constants.DialogFlow.HelloMarvelLookupIntentId:
                             _logger.LogDebug("DialogFlow: Beginning to request Marvel Lookup. SessionId: {SessionId}.", sessionId);
 
                             var (marvelFulfillmentText, marvelFulfillmentMessage, marvelPayLoad) = await _marvelSearchBuilder.Build(queryText, sessionId);
@@ -93,7 +95,7 @@ namespace StanLeeBot.Web.Areas.API
                             };
                             webHookResponse.Payload = marvelPayLoad;
                             break;
-                        case Constants.DialogFlow.HelloDCLookupId:
+                        case Constants.DialogFlow.HelloDCLookupIntentId:
                             _logger.LogDebug("DialogFlow: Beginning to request DC Comics Lookup. SessionId: {SessionId}.", sessionId);
 
                             var (dcFulfillmentText, dcFulfillmentMessage, dcPayLoad) = await _dcComicsSearchBuilder.Build(queryText, sessionId);
@@ -104,6 +106,18 @@ namespace StanLeeBot.Web.Areas.API
                                 dcFulfillmentMessage
                             };
                             webHookResponse.Payload = dcPayLoad;
+                            break;
+                        case Constants.DialogFlow.HelloShortenUrlIntentId:
+                            _logger.LogDebug("DialogFlow: Beginning Shortening Url. SessionId: {SessionId}.", sessionId);
+
+                            var (shortenFulfillmentText, shortenFulfillmentMessage, shortenPayload) = await _shortenUrlBuilder.Build("UnknownLongUrl", "UnknownDomain", sessionId);
+
+                            webHookResponse.FulfillmentText = shortenFulfillmentText;
+                            webHookResponse.FulfillmentMessages = new List<DialogFlowResponse.FulfillmentMessage>
+                            {
+                                shortenFulfillmentMessage
+                            };
+                            webHookResponse.Payload = shortenPayload;
                             break;
                         default:
                             _logger.LogWarning("DialogFlow: Unhandled intent: {IntentName}. SessionId: {SessionId}.", intentName, sessionId);

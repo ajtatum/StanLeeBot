@@ -10,6 +10,8 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using StanLeeBot.Web.Builders.Search;
 using StanLeeBot.Web.Builders.Search.Interfaces;
+using StanLeeBot.Web.Builders.ShortenUrl;
+using StanLeeBot.Web.Builders.ShortenUrl.Interfaces;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Services;
 using StanLeeBot.Web.Services.Interfaces;
@@ -56,6 +58,7 @@ namespace StanLeeBot.Web
             services.AddScoped<IGoogleSearchService, GoogleSearchService>();
             services.AddScoped<ISearchBuilder<MarvelSearchBuilder>, MarvelSearchBuilder>();
             services.AddScoped<ISearchBuilder<DCComicsSearchBuilder>, DCComicsSearchBuilder>();
+            services.AddScoped<IShortenUrlBuilder, ShortenUrlBuilder>();
             
             services.AddScoped<ISlackService, SlackService>();
             services.AddScoped<ITelegramMessagingService, TelegramMessagingService>();
