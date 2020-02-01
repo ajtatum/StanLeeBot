@@ -1,11 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BabouExtensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RestSharp;
 using SlackBotMessages;
 using SlackBotMessages.Enums;
 using SlackBotMessages.Models;
@@ -19,12 +17,15 @@ namespace StanLeeBot.Web.Services
         private readonly ILogger<SlackService> _logger;
         private readonly AppSettings _appSettings;
         private readonly IGoogleSearchService _googleSearchService;
+        private readonly IUrlShorteningService _urlShorteningService;
 
-        public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings, IGoogleSearchService googleSearchService)
+        public SlackService(ILogger<SlackService> logger, IOptionsMonitor<AppSettings> appSettings, 
+                            IGoogleSearchService googleSearchService, IUrlShorteningService urlShorteningService)
         {
             _logger = logger;
             _appSettings = appSettings.CurrentValue;
             _googleSearchService = googleSearchService;
+            _urlShorteningService = urlShorteningService;
         }
 
         #region SlackSlashCommands
@@ -164,50 +165,9 @@ namespace StanLeeBot.Web.Services
                 var longUrl = textList[0];
                 var emailAddress = textList[1];
 
-                var urlIsValid = longUrl.IsValidUrl();
-                var emailIsValid = new EmailAddressAttribute().IsValid(emailAddress);
-
-                if (urlIsValid && emailIsValid)
-                {
-                    var restClient = new RestClient(_appSettings.UrlShortenerEndpoint);
-                    var restRequest = new RestRequest(Method.POST);
-                    restRequest.AddHeader("AuthKey", _appSettings.BabouAuthKeys.Slack);
-                    restRequest.AddHeader("longUrl", longUrl);
-                    restRequest.AddHeader("emailAddress", emailAddress);
-                    var restResponse = await restClient.ExecuteTaskAsync(restRequest);
-
-                    if (!restResponse.ErrorMessage.IsNullOrWhiteSpace())
-                    {
-                        var stringBuilder = new StringBuilder();
-                        stringBuilder.AppendLine($"There was an error while processing your request. The error message is {restResponse.ErrorMessage}.");
-                        stringBuilder.AppendLine("If you continue to receive this error, please contact us at https://stanleebot.com/Support.");
-
-                        message.Text = stringBuilder.ToString();
-                        response = await client.SendAsync(message).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        var shortUrl = restResponse.Content;
-
-                        var stringBuilder = new StringBuilder();
-                        stringBuilder.AppendLine($"I've shortened {longUrl} to {shortUrl}");
-                        stringBuilder.AppendLine("If you want to manage your short url or view stats, go to https://babou.io.");
-                        stringBuilder.AppendLine($"If you haven't already, use the \"Forgot Password\" link on the login page and enter your email address ({emailAddress}) to reset your password.");
-
-                        message.Text = stringBuilder.ToString();
-                        response = await client.SendAsync(message).ConfigureAwait(false);
-                    }
-                }
-                else if (!urlIsValid)
-                {
-                    message.Text = $"The url you provided, {longUrl}, doesn't seem to be a valid URL. Please try again.";
-                    response = await client.SendAsync(message).ConfigureAwait(false);
-                }
-                else if (!emailIsValid)
-                {
-                    message.Text = $"The email address you provided, {emailAddress}, doesn't seem to be a valid email. Please try again.";
-                    response = await client.SendAsync(message).ConfigureAwait(false);
-                }
+                var shortenerMessage = await _urlShorteningService.Shorten(longUrl, Constants.UrlShortenerDomains.MrvlCo, emailAddress, UrlShorteningServices.Slack, slackCommandRequest.TriggerId);
+                message.Text = shortenerMessage;
+                response = await client.SendAsync(message);
             }
             else
             {
