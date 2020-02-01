@@ -23,6 +23,8 @@
 
     public class BabouAuthKeySettings
     {
+        public string DialogFlow { get; set; }
+        public string Facebook { get; set; }
         public string Slack { get; set; }
     }
 
