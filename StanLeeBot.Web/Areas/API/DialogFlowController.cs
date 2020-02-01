@@ -76,6 +76,8 @@ namespace StanLeeBot.Web.Areas.API
                     intentName = intentName.Substring(intentName.LastIndexOf("/", StringComparison.Ordinal) + 1);
 
                     var queryText = webHookRequest.QueryResult.QueryText;
+                    var fulfillmentText = webHookRequest.QueryResult.FulfillmentText;
+                    var originalDetectIntentRequest = webHookRequest.OriginalDetectIntentRequest?.Source ?? "DialogFlow";
 
                     _logger.LogInformation("DialogFlow: Processing request for intent {Intent} and queryText {QueryText}. SessionId: {SessionId}.", intentName, queryText, sessionId);
 
@@ -110,13 +112,32 @@ namespace StanLeeBot.Web.Areas.API
                         case Constants.DialogFlow.HelloShortenUrlIntentId:
                             _logger.LogDebug("DialogFlow: Beginning Shortening Url. SessionId: {SessionId}.", sessionId);
 
-                            var (shortenFulfillmentText, shortenFulfillmentMessage, shortenPayload) = await _shortenUrlBuilder.Build("UnknownLongUrl", "UnknownDomain", sessionId);
+                            var shorteningInfo = fulfillmentText.Split(" ");
+                            var longUrl = string.Empty;
+                            var shortDomain = string.Empty;
+                            var emailAddress = string.Empty;
+
+                            if (shorteningInfo.Length == 3)
+                            {
+                                longUrl = shorteningInfo[0].Trim();
+                                shortDomain = shorteningInfo[1].Trim();
+                                emailAddress = shorteningInfo[2].Trim();
+                            }
+
+                            var originSource = originalDetectIntentRequest switch
+                            {
+                                "facebook" => UrlShorteningServices.Facebook,
+                                "slack" => UrlShorteningServices.Slack,
+                                _ => UrlShorteningServices.DialogFlow
+                            };
+
+                            var (shortenFulfillmentText, shortenFulfillmentMessage, shortenPayload) = await _shortenUrlBuilder.Build(longUrl, shortDomain, emailAddress, originSource, sessionId);
 
                             webHookResponse.FulfillmentText = shortenFulfillmentText;
-                            webHookResponse.FulfillmentMessages = new List<DialogFlowResponse.FulfillmentMessage>
-                            {
-                                shortenFulfillmentMessage
-                            };
+                            //webHookResponse.FulfillmentMessages = new List<DialogFlowResponse.FulfillmentMessage>
+                            //{
+                            //    shortenFulfillmentMessage
+                            //};
                             webHookResponse.Payload = shortenPayload;
                             break;
                         default:
