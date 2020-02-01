@@ -1,47 +1,58 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using BabouExtensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using StanLeeBot.Web.Builders.Search.Interfaces;
 using StanLeeBot.Web.Builders.ShortenUrl.Interfaces;
 using StanLeeBot.Web.Models;
 using StanLeeBot.Web.Models.DialogFlow;
 using StanLeeBot.Web.Models.DialogFlow.Payloads;
+using StanLeeBot.Web.Services.Interfaces;
 
 namespace StanLeeBot.Web.Builders.ShortenUrl
 {
     public class ShortenUrlBuilder : IShortenUrlBuilder
     {
         private readonly ILogger<ShortenUrlBuilder> _logger;
-        private readonly AppSettings _appSettings;
+        private readonly IUrlShorteningService _urlShorteningService;
 
-        public ShortenUrlBuilder(ILogger<ShortenUrlBuilder> logger, IOptionsMonitor<AppSettings> appSettings)
+        public ShortenUrlBuilder(ILogger<ShortenUrlBuilder> logger, IUrlShorteningService urlShorteningService)
         {
             _logger = logger;
-            _appSettings = appSettings.CurrentValue;
+            _urlShorteningService = urlShorteningService;
         }
 
-        public async Task<(string, DialogFlowResponse.FulfillmentMessage, PayloadSettings)> Build(string longUrl, string domain, string sessionId)
+        public async Task<(string, DialogFlowResponse.FulfillmentMessage, PayloadSettings)> Build(string longUrl, string domain, string emailAddress, UrlShorteningServices originSource, string sessionId)
         {
-            _logger.LogInformation("ShortenUrlBuilder: Received request to shorten {LongUrl} to a {Domain} domain. SessionId: {SessionId}.", longUrl, domain, sessionId);
+            _logger.LogInformation("ShortenUrlBuilder: Received request to shorten {LongUrl} to a {Domain} domain from {OriginSource}. SessionId: {SessionId}.", longUrl, domain, originSource, sessionId);
 
             #region Set Defaults
-            var fulfillmentMessage = new DialogFlowResponse.FulfillmentMessage
-            {
-                Card = new DialogFlowResponse.Card()
-                {
-                    Title = "Sorry",
-                    Subtitle = $"Sorry, couldn't shorten {longUrl} to a {domain} domain.",
-                    Buttons = new List<DialogFlowResponse.Button>()
-                }
-            };
+            //var responseFulfillmentMessage = new DialogFlowResponse.FulfillmentMessage
+            //{
+            //    Text = $"Sorry, couldn't shorten {longUrl} to a {domain} domain."
+            //};
 
-            var fulfillmentText = $"Sorry, couldn't shorten {longUrl} to a {domain} domain.";
+            var responseFulfillmentText = $"Sorry, couldn't shorten {longUrl} to a {domain} domain.";
 
-            var payloadBuilder = ShortenUrl.Payloads.DefaultPayload.Build(longUrl,domain);
+            var payloadBuilder = Payloads.DefaultPayload.Build(longUrl, domain);
             #endregion
 
-            return (fulfillmentText, fulfillmentMessage, payloadBuilder);
+            try
+            {
+                var shortenerMessage = await _urlShorteningService.Shorten(longUrl, domain, emailAddress, originSource, sessionId);
+
+                responseFulfillmentText = shortenerMessage;
+                //responseFulfillmentMessage.Text = responseFulfillmentText;
+
+                payloadBuilder.Google = Payloads.GooglePayload.Build(responseFulfillmentText.RemoveLineEndings());
+                payloadBuilder.Facebook = Payloads.FacebookPayload.Build(responseFulfillmentText);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("ShortenUrlBuilder: There was an error while trying to use the UrlShorteningService. Error: {@Error}", ex);
+            }
+
+            return (responseFulfillmentText, null, payloadBuilder);
         }
     }
 }
