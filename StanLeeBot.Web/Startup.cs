@@ -59,6 +59,7 @@ namespace StanLeeBot.Web
             services.AddScoped<ISearchBuilder<MarvelSearchBuilder>, MarvelSearchBuilder>();
             services.AddScoped<ISearchBuilder<DCComicsSearchBuilder>, DCComicsSearchBuilder>();
             services.AddScoped<IShortenUrlBuilder, ShortenUrlBuilder>();
+            services.AddScoped<IUrlShorteningService, UrlShorteningService>();
             
             services.AddScoped<ISlackService, SlackService>();
             services.AddScoped<ITelegramMessagingService, TelegramMessagingService>();
