@@ -31,6 +31,15 @@ namespace StanLeeBot.Web.Models.DialogFlow
         {
             [JsonProperty("card", NullValueHandling = NullValueHandling.Ignore)]
             public Card Card { get; set; }
+
+            [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
+            public Text Text { get; set; }
+        }
+
+        public class Text
+        {
+            [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
+            public string[] Texts { get; set; }
         }
 
         public class Card
