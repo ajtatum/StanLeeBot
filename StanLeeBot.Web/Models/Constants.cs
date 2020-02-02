@@ -9,6 +9,7 @@
             public const string HelloMarvelLookupIntentId = "92fd80e1-0526-45ed-bb3f-e67f3cb929cb";
             public const string HelloDCLookupIntentId = "78407ec9-cc76-4574-b8f1-a954f55150c0";
             public const string HelloShortenUrlIntentId = "9d3458c7-d50d-494e-9d14-f98d33fa2dfa";
+            public const string StartQuickShortenUrlIntentId = "b1a847b6-8287-4ee3-95e7-094db372d49a";
         }
 
         public struct UrlShortenerDomains
