@@ -26,6 +26,7 @@
         public string DialogFlow { get; set; }
         public string Facebook { get; set; }
         public string Slack { get; set; }
+        public string Telegram { get; set; }
     }
 
     public class AzureSettings
