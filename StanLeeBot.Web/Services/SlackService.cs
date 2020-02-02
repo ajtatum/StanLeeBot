@@ -165,7 +165,7 @@ namespace StanLeeBot.Web.Services
                 var longUrl = textList[0];
                 var emailAddress = textList[1];
 
-                var shortenerMessage = await _urlShorteningService.Shorten(longUrl, Constants.UrlShortenerDomains.MrvlCo, emailAddress, UrlShorteningServices.Slack, slackCommandRequest.TriggerId);
+                var shortenerMessage = await _urlShorteningService.Shorten(longUrl, Constants.UrlShortenerDomains.MrvlCo, emailAddress, OriginSources.Slack, slackCommandRequest.TriggerId);
                 message.Text = shortenerMessage;
                 response = await client.SendAsync(message);
             }

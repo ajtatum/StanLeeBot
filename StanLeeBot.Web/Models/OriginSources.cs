@@ -1,9 +1,10 @@
 ﻿namespace StanLeeBot.Web.Models
 {
-    public enum UrlShorteningServices
+    public enum OriginSources
     {
         DialogFlow,
         Facebook,
-        Slack
+        Slack,
+        Telegram
     }
 }

@@ -22,27 +22,36 @@ namespace StanLeeBot.Web.Services
             _appSettings = appSettings.CurrentValue;
         }
 
-        public async Task<string> Shorten(string longUrl, string domain, string emailAddress, UrlShorteningServices urlShorteningService, string sessionId)
+        public async Task<string> Shorten(string longUrl, string domain, string emailAddress, OriginSources originSource, string sessionId)
         {
             var urlIsValid = longUrl.IsValidUrl();
             var emailIsValid = new EmailAddressAttribute().IsValid(emailAddress);
             var authKey = string.Empty;
             var responseMessage = string.Empty;
 
-            authKey = urlShorteningService switch
+            authKey = originSource switch
             {
-                UrlShorteningServices.DialogFlow => _appSettings.BabouAuthKeys.DialogFlow,
-                UrlShorteningServices.Facebook => _appSettings.BabouAuthKeys.Facebook,
-                UrlShorteningServices.Slack => _appSettings.BabouAuthKeys.Slack,
+                OriginSources.DialogFlow => _appSettings.BabouAuthKeys.DialogFlow,
+                OriginSources.Facebook => _appSettings.BabouAuthKeys.Facebook,
+                OriginSources.Slack => _appSettings.BabouAuthKeys.Slack,
+                OriginSources.Telegram => _appSettings.BabouAuthKeys.Telegram,
                 _ => authKey
             };
+
+            var authKeyAvailable = !authKey.IsNullOrWhiteSpace();
+
+            if (domain == "marvel.co" || domain == "marvelco")
+                domain = Constants.UrlShortenerDomains.MrvlCo;
+
+            if (domain == "x-men.to" || domain == "x-mento")
+                domain = Constants.UrlShortenerDomains.XMenTo;
 
             if (domain.Contains("."))
                 domain = domain.Replace(".", string.Empty);
 
-            _logger.LogInformation("UrlShorteningService: Beginning to shorten url {LongUrl} using {Domain} using {Service}. SessionId: {SessionId}", longUrl, domain, urlShorteningService, sessionId);
+            _logger.LogInformation("UrlShorteningService: Beginning to shorten url {LongUrl} using {Domain} using {Service}. SessionId: {SessionId}", longUrl, domain, originSource, sessionId);
 
-            if (urlIsValid && emailIsValid)
+            if (authKeyAvailable && urlIsValid && emailIsValid)
             {
                 var restClient = new RestClient(_appSettings.UrlShortenerEndpoint);
                 var restRequest = new RestRequest(Method.POST);
@@ -68,7 +77,7 @@ namespace StanLeeBot.Web.Services
 
                     var shortUrl = restResponse.Content;
 
-                    responseMessage = $"Excelsior! I've shortened {longUrl} to {shortUrl} and remember your babou.io account is under {emailAddress}.";
+                    responseMessage = $"Excelsior! I've shortened {longUrl} to {shortUrl} and remember your Babou.io account is under {emailAddress}.";
                 }
             }
             else if (!urlIsValid)
@@ -82,6 +91,12 @@ namespace StanLeeBot.Web.Services
                 _logger.LogError("UrlShorteningService: Email is invalid for SessionId: {SessionId}", sessionId);
 
                 responseMessage = $"The email address you provided, {emailAddress}, doesn't seem to be a valid email. Please try again.";
+            }
+            else
+            {
+                _logger.LogError("UrlShorteningService: Couldn't find AuthKey for SessionId: {SessionId}", sessionId);
+
+                responseMessage = "Sorry, there was an error processing your request. If you continue to receive this error, please contact us at https://stanleebot.com/Support.";
             }
 
             return responseMessage;

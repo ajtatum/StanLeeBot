@@ -22,15 +22,18 @@ namespace StanLeeBot.Web.Builders.ShortenUrl
             _urlShorteningService = urlShorteningService;
         }
 
-        public async Task<(string, DialogFlowResponse.FulfillmentMessage, PayloadSettings)> Build(string longUrl, string domain, string emailAddress, UrlShorteningServices originSource, string sessionId)
+        public async Task<(string, DialogFlowResponse.FulfillmentMessage, PayloadSettings)> Build(string longUrl, string domain, string emailAddress, OriginSources originSource, string sessionId)
         {
             _logger.LogInformation("ShortenUrlBuilder: Received request to shorten {LongUrl} to a {Domain} domain from {OriginSource}. SessionId: {SessionId}.", longUrl, domain, originSource, sessionId);
 
             #region Set Defaults
-            //var responseFulfillmentMessage = new DialogFlowResponse.FulfillmentMessage
-            //{
-            //    Text = $"Sorry, couldn't shorten {longUrl} to a {domain} domain."
-            //};
+            var responseFulfillmentMessage = new DialogFlowResponse.FulfillmentMessage
+            {
+                Text = new DialogFlowResponse.Text()
+                {
+                    Texts = new[] { $"Sorry, couldn't shorten {longUrl} to a {domain} domain." }
+                }
+            };
 
             var responseFulfillmentText = $"Sorry, couldn't shorten {longUrl} to a {domain} domain.";
 
@@ -42,7 +45,10 @@ namespace StanLeeBot.Web.Builders.ShortenUrl
                 var shortenerMessage = await _urlShorteningService.Shorten(longUrl, domain, emailAddress, originSource, sessionId);
 
                 responseFulfillmentText = shortenerMessage;
-                //responseFulfillmentMessage.Text = responseFulfillmentText;
+                responseFulfillmentMessage.Text = new DialogFlowResponse.Text()
+                {
+                    Texts = new[] {responseFulfillmentText}
+                };
 
                 payloadBuilder.Google = Payloads.GooglePayload.Build(responseFulfillmentText.RemoveLineEndings());
                 payloadBuilder.Facebook = Payloads.FacebookPayload.Build(responseFulfillmentText);
@@ -52,7 +58,7 @@ namespace StanLeeBot.Web.Builders.ShortenUrl
                 _logger.LogError("ShortenUrlBuilder: There was an error while trying to use the UrlShorteningService. Error: {@Error}", ex);
             }
 
-            return (responseFulfillmentText, null, payloadBuilder);
+            return (responseFulfillmentText, responseFulfillmentMessage, payloadBuilder);
         }
     }
 }

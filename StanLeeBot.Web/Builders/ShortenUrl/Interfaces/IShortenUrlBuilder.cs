@@ -8,6 +8,6 @@ namespace StanLeeBot.Web.Builders.ShortenUrl.Interfaces
 {
     public interface IShortenUrlBuilder
     {
-        Task<(string, DialogFlowResponse.FulfillmentMessage, PayloadSettings)> Build(string longUrl, string domain, string emailAddress, UrlShorteningServices originSource, string sessionId);
+        Task<(string, DialogFlowResponse.FulfillmentMessage, PayloadSettings)> Build(string longUrl, string domain, string emailAddress, OriginSources originSource, string sessionId);
     }
 }
