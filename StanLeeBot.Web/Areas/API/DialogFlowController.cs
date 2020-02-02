@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using BabouExtensions;
 using BabouExtensions.AspNetCore;
-using Google.Cloud.Dialogflow.V2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -66,20 +65,38 @@ namespace StanLeeBot.Web.Areas.API
                 {
                     _logger.LogDebug("DialogFlow: Request header matches!");
 
-                    var webHookRequest = JsonConvert.DeserializeObject<WebhookRequest>(requestBody);
-                    _logger.LogInformation("DialogFlow: Received WebHookRequest: {WebHookRequest}", webHookRequest);
+                    _logger.LogInformation("DialogFlow: Received WebHookRequest: {RawRequestBody}", requestBody);
 
-                    sessionId = webHookRequest.Session;
+                    dynamic webHookRequest = JsonConvert.DeserializeObject(requestBody);
+                    //_logger.LogInformation("DialogFlow: Received WebHookRequest: {WebHookRequest}", webHookRequest);
+
+                    sessionId = webHookRequest.session;
                     sessionId = sessionId.Substring(sessionId.LastIndexOf("/", StringComparison.Ordinal) + 1);
 
-                    intentName = webHookRequest.QueryResult.Intent.Name;
+                    intentName = webHookRequest.queryResult.intent.name;
                     intentName = intentName.Substring(intentName.LastIndexOf("/", StringComparison.Ordinal) + 1);
 
-                    var queryText = webHookRequest.QueryResult.QueryText;
-                    var fulfillmentText = webHookRequest.QueryResult.FulfillmentText;
-                    var originalDetectIntentRequest = webHookRequest.OriginalDetectIntentRequest?.Source ?? "DialogFlow";
+                    string queryText = webHookRequest.queryResult.queryText;
 
-                    _logger.LogInformation("DialogFlow: Processing request for intent {Intent} and queryText {QueryText}. SessionId: {SessionId}.", intentName, queryText, sessionId);
+                    string originalDetectIntentRequest;
+                    try
+                    {
+                        originalDetectIntentRequest = webHookRequest.originalDetectIntentRequest.source;
+                    }
+                    catch //this is horrible
+                    {
+                        originalDetectIntentRequest = "DialogFlow";
+                    }
+
+                    var originSource = originalDetectIntentRequest switch
+                    {
+                        "facebook" => OriginSources.Facebook,
+                        "slack" => OriginSources.Slack,
+                        "telegram" => OriginSources.Telegram,
+                        _ => OriginSources.DialogFlow
+                    };
+
+                    _logger.LogInformation("DialogFlow: Processing request for intent {Intent} and queryText {QueryText} using {OriginSource}. SessionId: {SessionId}.", intentName, queryText, originSource, sessionId);
 
                     var webHookResponse = new DialogFlowResponse.Response();
 
@@ -110,34 +127,30 @@ namespace StanLeeBot.Web.Areas.API
                             webHookResponse.Payload = dcPayLoad;
                             break;
                         case Constants.DialogFlow.HelloShortenUrlIntentId:
+                        case Constants.DialogFlow.StartQuickShortenUrlIntentId:
                             _logger.LogDebug("DialogFlow: Beginning Shortening Url. SessionId: {SessionId}.", sessionId);
 
-                            var shorteningInfo = fulfillmentText.Split(" ");
+                            bool allRequiredParamsPresent = webHookRequest.queryResult.allRequiredParamsPresent;
+
+                            //var shorteningInfo = fulfillmentText.Split(" ");
                             var longUrl = string.Empty;
                             var shortDomain = string.Empty;
                             var emailAddress = string.Empty;
 
-                            if (shorteningInfo.Length == 3)
+                            if (allRequiredParamsPresent)
                             {
-                                longUrl = shorteningInfo[0].Trim();
-                                shortDomain = shorteningInfo[1].Trim();
-                                emailAddress = shorteningInfo[2].Trim();
+                                longUrl = webHookRequest.queryResult.parameters.LongUrl;
+                                shortDomain = webHookRequest.queryResult.parameters.ShortUrlDomain;
+                                emailAddress = webHookRequest.queryResult.parameters.UserEmail;
                             }
-
-                            var originSource = originalDetectIntentRequest switch
-                            {
-                                "facebook" => UrlShorteningServices.Facebook,
-                                "slack" => UrlShorteningServices.Slack,
-                                _ => UrlShorteningServices.DialogFlow
-                            };
 
                             var (shortenFulfillmentText, shortenFulfillmentMessage, shortenPayload) = await _shortenUrlBuilder.Build(longUrl, shortDomain, emailAddress, originSource, sessionId);
 
                             webHookResponse.FulfillmentText = shortenFulfillmentText;
-                            //webHookResponse.FulfillmentMessages = new List<DialogFlowResponse.FulfillmentMessage>
-                            //{
-                            //    shortenFulfillmentMessage
-                            //};
+                            webHookResponse.FulfillmentMessages = new List<DialogFlowResponse.FulfillmentMessage>
+                            {
+                                shortenFulfillmentMessage
+                            };
                             webHookResponse.Payload = shortenPayload;
                             break;
                         default:
