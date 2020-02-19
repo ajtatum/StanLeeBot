@@ -29,7 +29,7 @@ The **@StanLeeBot** can also shorten long urls into a [mrvl.co](https://mrvl.co/
 
 **@TheStanLeeBot**  scours the Marvel and DC Comics website to find information that you're looking for.
 
-To learn more about anything Marvel or DC Comics related, use the commands **/marvel** and **/dc**.
+To learn more about anything Marvel or DC Comics related, use the commands **/marvel** and **/dc** or start a conversation by saying "**hi**".
 
 Here are some examples:
 
@@ -37,6 +37,8 @@ Here are some examples:
 * /marvel Infinity Stones
 * /dc Batman
 * /dc Justice League Movie
+
+By initiating a conversation with "**hi**" you can also access **@TheStanLeeBot's** URL Shortening Service.
 
 [![Add to Telegram](https://raw.githubusercontent.com/ajtatum/StanLeeBot/master/assets/add-to-telegram-button.png "Add to Telegram")](https://t.me/TheStanLeeBot)
 
