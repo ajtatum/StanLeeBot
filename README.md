@@ -44,6 +44,6 @@ Here are some examples:
 
 #### Developed by AJ Tatum
 
-[![ajtatum.com](https://img.icons8.com/clouds/50/000000/domain.png "ajtatum.com")](https://ajtatum.com/?utm_source=github&utm_medium=website&utm_campaign=source_code)
+[![ajtatum.com](https://img.icons8.com/clouds/50/000000/domain.png "ajtatum.com")](https://ajtatum.com/?utm_source=github&utm_medium=website&utm_campaign=stanleebot)
 
 [Icons by Icons8](https://icons8.com/)
