@@ -1,0 +1,95 @@
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-155854229-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'UA-155854229-1');
+    </script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @if (Convert.ToString(ViewData["Title"]) == "Home page")
+    {
+        <title>StanLeeBot</title>
+    }
+    else
+    {
+        <title>StanLeeBot - @ViewData["Title"]</title>
+    }
+    <partial name="_SocialMetatags" />
+    <partial name="_Favicons" />
+    <environment include="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.css" />
+        <link rel="stylesheet" href="~/lib/font-awesome/css/all.css" />
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    </environment>
+    <environment exclude="Development">
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="~/lib/font-awesome/css/all.min.css" />
+        <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
+    </environment>
+    @RenderSection("CSS", required: false)
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark box-shadow">
+            <div class="container">
+                <a class="navbar-brand" asp-area="" asp-page="/Index">StanLeeBot</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-area="" asp-page="/Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-white" asp-area="" asp-page="/Support">Support</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container-fluid text-center mb-4 bg-stanlee">
+        <img src="~/images/StanLee-250x250.png" class="img-fluid pad-25-0" alt="StanLeeBot" title="StanLeeBot" />
+    </div>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted line-height-30">
+        <div class="container">
+            &copy; @DateTime.Now.Year - StanLeeBot - <a class="text-lightblue" asp-area="" asp-page="/Terms">Terms & Conditions</a> - <a class="text-lightblue" asp-area="" asp-page="/Privacy">Privacy Policy</a> - <a class="text-lightblue" asp-area="" asp-page="/Support">Support</a>
+            @*<div class="float-right">
+                <a href="https://www.facebook.com/TheStanLeeBot/"><i class="fab fa-2x fa-facebook-square text-brand-facebook"></i></a> <a href="https://twitter.com/StanLeeBot"><i class="fab fa-2x fa-twitter-square text-brand-twitter"></i></a>
+            </div>*@
+        </div>
+        <div class="container">
+            Developed by <a class="text-lightblue" href="https://ajtatum.com" target="_blank">AJ Tatum</a>.
+        </div>
+    </footer>
+
+<environment include="Development">
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.js"></script>
+    <script src="~/lib/font-awesome/js/all.min.js"></script>
+    <script src="~/js/site.js"></script>
+</environment>
+<environment exclude="Development">
+    <script src="~/js/stanlee.min.js"></script>
+</environment>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
