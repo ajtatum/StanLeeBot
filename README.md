@@ -17,10 +17,6 @@ Here are some examples:
 
 For help or support, use the slash command **/stanlee** with "help" or "support".
 
-The **@StanLeeBot** can also shorten long urls into a [mrvl.co](https://mrvl.co/) url. You can use the command **/mrvlco**. The format for the **/mrvlco** commands is as follows **/mrvlco** _LongUrl_ _YourEmailAddress_.
-
-**@StanLeeBot** asks for your email so that if you want to keep track of your short urls or view stats, you can log into the URL Shortening Service provided by [babou.io](https://babou.io). Don't worry, we won't email you or sell your email address to any third party. Your email address is to strictly create or update an account with [babou.io](https://babou.io) (which is also developed by [Excelsior Dev](https://github.com/ExcelsiorDev)).
-
 [![Add to Slack](https://platform.slack-edge.com/img/add_to_slack.png)](https://stanleebot.com/slack-direct)
 
 ---
@@ -38,9 +34,11 @@ Here are some examples:
 * /dc Batman
 * /dc Justice League Movie
 
-By initiating a conversation with "**hi**" you can also access **@TheStanLeeBot's** URL Shortening Service.
-
 [![Add to Telegram](https://raw.githubusercontent.com/ajtatum/StanLeeBot/master/assets/add-to-telegram-button.png "Add to Telegram")](https://t.me/TheStanLeeBot)
+
+---
+
+#### [Visit Facebook Page](https://www.facebook.com/The-Stan-Lee-Bot-108162641461034)
 
 ---
 
